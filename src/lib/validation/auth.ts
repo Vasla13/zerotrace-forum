@@ -3,10 +3,13 @@ import { z } from "zod";
 const usernameRegex = /^[A-Za-z0-9_]{3,24}$/;
 
 export const loginSchema = z.object({
-  email: z
+  username: z
     .string()
     .trim()
-    .email("Entre une adresse email valide."),
+    .regex(
+      usernameRegex,
+      "Le pseudo doit faire 3 à 24 caractères et n’utiliser que lettres, chiffres ou underscores.",
+    ),
   password: z
     .string()
     .min(6, "Le mot de passe doit contenir au moins 6 caractères."),
@@ -21,10 +24,6 @@ export const registerSchema = z
         usernameRegex,
         "Le pseudo doit faire 3 à 24 caractères et n’utiliser que lettres, chiffres ou underscores.",
       ),
-    email: z
-      .string()
-      .trim()
-      .email("Entre une adresse email valide."),
     password: z
       .string()
       .min(6, "Le mot de passe doit contenir au moins 6 caractères."),

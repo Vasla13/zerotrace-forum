@@ -1,16 +1,16 @@
 import { ZodError } from "zod";
 
 const firebaseErrorMessages: Record<string, string> = {
-  "auth/email-already-in-use": "Cette adresse email est déjà utilisée.",
-  "auth/invalid-email": "Adresse email invalide.",
+  "auth/email-already-in-use": "Ce compte existe déjà.",
+  "auth/invalid-email": "Impossible de valider l’identifiant interne du compte.",
   "auth/invalid-credential":
-    "Email ou mot de passe incorrect. Vérifie aussi que le provider Email/Mot de passe est activé dans Firebase.",
+    "Pseudo ou mot de passe incorrect. Vérifie aussi que le provider Email/Mot de passe est activé dans Firebase.",
   "auth/network-request-failed": "Erreur réseau pendant la requête Firebase.",
   "auth/operation-not-allowed":
     "Le provider Email/Mot de passe n’est pas encore activé dans Firebase Authentication.",
   "auth/too-many-requests":
     "Trop de tentatives. Réessaie dans quelques instants.",
-  "auth/user-not-found": "Aucun compte trouvé pour cet email.",
+  "auth/user-not-found": "Aucun compte trouvé pour ce pseudo.",
   "permission-denied":
     "Permission refusée. Vérifie que les règles Firestore ont bien été déployées.",
 };

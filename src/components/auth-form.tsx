@@ -4,7 +4,7 @@ import Link from "next/link";
 import { startTransition, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LockKeyhole, Mail, Sparkles, UserRound } from "lucide-react";
+import { LockKeyhole, Sparkles, UserRound } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { InputShell } from "@/components/input-shell";
@@ -22,7 +22,6 @@ type AuthFormProps = {
 
 type AuthFormValues = {
   username: string;
-  email: string;
   password: string;
   confirmPassword: string;
 };
@@ -45,7 +44,6 @@ export function AuthForm({ mode }: AuthFormProps) {
     resolver: resolver as never,
     defaultValues: {
       username: "",
-      email: "",
       password: "",
       confirmPassword: "",
     },
@@ -63,14 +61,13 @@ export function AuthForm({ mode }: AuthFormProps) {
       if (isRegisterMode) {
         await registerForumUser({
           username: values.username,
-          email: values.email,
           password: values.password,
           confirmPassword: values.confirmPassword,
         });
         toast.success("Compte créé avec succès.");
       } else {
         await signInForumUser({
-          email: values.email,
+          username: values.username,
           password: values.password,
         });
         toast.success("Connexion réussie.");
@@ -109,35 +106,17 @@ export function AuthForm({ mode }: AuthFormProps) {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-7 grid gap-4">
-          {isRegisterMode ? (
-            <label className="grid gap-2">
-              <span className="text-sm font-medium">Pseudo</span>
-              <InputShell
-                {...register("username")}
-                icon={UserRound}
-                autoComplete="username"
-                placeholder="nova_trace"
-              />
-              {errors.username ? (
-                <span className="text-xs text-[color:var(--danger)]">
-                  {errors.username.message}
-                </span>
-              ) : null}
-            </label>
-          ) : null}
-
           <label className="grid gap-2">
-            <span className="text-sm font-medium">Email</span>
+            <span className="text-sm font-medium">Pseudo</span>
             <InputShell
-              {...register("email")}
-              icon={Mail}
-              autoComplete="email"
-              placeholder="hello@signal-lab.test"
-              type="email"
+              {...register("username")}
+              icon={UserRound}
+              autoComplete="username"
+              placeholder={isRegisterMode ? "nova_trace" : "nightshift"}
             />
-            {errors.email ? (
+            {errors.username ? (
               <span className="text-xs text-[color:var(--danger)]">
-                {errors.email.message}
+                {errors.username.message}
               </span>
             ) : null}
           </label>

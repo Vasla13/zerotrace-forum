@@ -54,13 +54,29 @@ function mapUserProfile(
   };
 }
 
+function buildInternalAuthEmail(usernameLower: string) {
+  const uniqueSuffix =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  return `${usernameLower}--${uniqueSuffix}@auth.zerotrace.local`;
+}
+
 export async function registerForumUser(values: RegisterFormValues) {
   const parsed = registerSchema.parse(values);
   const auth = getFirebaseAuth();
   const db = getFirebaseDb();
   const username = parsed.username.trim();
   const usernameLower = normalizeUsername(username);
-  const email = parsed.email.trim().toLowerCase();
+  const usernameRef = doc(db, "usernames", usernameLower);
+  const existingUsername = await getDoc(usernameRef);
+
+  if (existingUsername.exists()) {
+    throw new Error("Ce pseudo est déjà utilisé.");
+  }
+
+  const email = buildInternalAuthEmail(usernameLower);
 
   const credential = await createUserWithEmailAndPassword(
     auth,
@@ -71,7 +87,6 @@ export async function registerForumUser(values: RegisterFormValues) {
   try {
     await runTransaction(db, async (transaction) => {
       const userRef = doc(db, "users", credential.user.uid);
-      const usernameRef = doc(db, "usernames", usernameLower);
 
       const userSnapshot = await transaction.get(userRef);
       const usernameSnapshot = await transaction.get(usernameRef);
@@ -111,9 +126,15 @@ export async function registerForumUser(values: RegisterFormValues) {
 
 export async function signInForumUser(values: LoginFormValues) {
   const parsed = loginSchema.parse(values);
+  const profile = await getUserProfileByUsername(parsed.username);
+
+  if (!profile) {
+    throw new Error("Pseudo ou mot de passe invalide.");
+  }
+
   return signInWithEmailAndPassword(
     getFirebaseAuth(),
-    parsed.email.trim().toLowerCase(),
+    profile.email.trim().toLowerCase(),
     parsed.password,
   );
 }
