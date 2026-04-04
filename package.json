@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint .",
     "firebase:setup": "node scripts/firebase-setup.mjs",
-    "firebase:deploy": "firebase deploy --only firestore:rules,firestore:indexes"
+    "firebase:deploy": "firebase deploy --only firestore:rules,firestore:indexes",
+    "firebase:deploy:app": "firebase deploy --only apphosting:zerotrace",
+    "firebase:deploy:full": "firebase deploy"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

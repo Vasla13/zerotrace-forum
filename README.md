@@ -95,13 +95,27 @@ Avant d’utiliser la base distante, pousse les règles et index :
 npm run firebase:deploy
 ```
 
-## Hébergement Firebase du site
+## Site en ligne
 
-Le code du forum est prêt pour un déploiement web, mais le projet Firebase `forum-20260404` est actuellement en `freeTier`.
+Le site est publié sur Firebase App Hosting :
 
-Le déploiement du site via `Firebase App Hosting` est donc bloqué tant que le projet n’est pas passé au plan `Blaze`.
+`https://zerotrace--forum-20260404.europe-west4.hosted.app`
 
-Une fois le projet mis à niveau dans la console Firebase, le site pourra être branché sur App Hosting.
+## Déploiement App Hosting
+
+Le backend App Hosting configuré pour ce repo est `zerotrace`.
+
+Pour republier l'application web :
+
+```bash
+npm run firebase:deploy:app
+```
+
+Pour tout redéployer :
+
+```bash
+npm run firebase:deploy:full
+```
 
 ## Étape Firebase restante
 
@@ -120,6 +134,8 @@ npm run build
 npm run lint
 npm run firebase:setup -- --projectId forum-20260404
 npm run firebase:deploy
+npm run firebase:deploy:app
+npm run firebase:deploy:full
 ```
 
 ## Notes techniques
