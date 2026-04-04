@@ -108,21 +108,6 @@ export function AuthForm({ mode }: AuthFormProps) {
           </span>
         </div>
 
-        <div className="forum-toolbar mt-5">
-          <span className="forum-stat-chip">
-            <strong>Firebase</strong>
-            auth
-          </span>
-          <span className="forum-stat-chip">
-            <strong>Profil</strong>
-            public
-          </span>
-          <span className="forum-stat-chip">
-            <strong>Forum</strong>
-            live
-          </span>
-        </div>
-
         <form onSubmit={handleSubmit(onSubmit)} className="mt-7 grid gap-4">
           {isRegisterMode ? (
             <label className="grid gap-2">
@@ -131,7 +116,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                 {...register("username")}
                 icon={UserRound}
                 autoComplete="username"
-                placeholder="eripe_05"
+                placeholder="nova_trace"
               />
               {errors.username ? (
                 <span className="text-xs text-[color:var(--danger)]">
@@ -147,7 +132,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               {...register("email")}
               icon={Mail}
               autoComplete="email"
-              placeholder="eripe@example.com"
+              placeholder="hello@signal-lab.test"
               type="email"
             />
             {errors.email ? (
