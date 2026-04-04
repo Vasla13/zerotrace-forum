@@ -105,6 +105,8 @@ Le site est publié sur Firebase App Hosting :
 
 Le backend App Hosting configuré pour ce repo est `zerotrace`.
 
+App Hosting injecte automatiquement la configuration Firebase Web en production. La clé web n'est donc plus committée dans `apphosting.yaml`.
+
 Pour republier l'application web :
 
 ```bash

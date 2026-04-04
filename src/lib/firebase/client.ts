@@ -1,7 +1,11 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { browserLocalPersistence, getAuth, setPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getFirebaseConfig, isFirebaseConfigured } from "@/lib/firebase/config";
+import {
+  getFirebaseConfig,
+  hasExplicitFirebaseConfig,
+  isFirebaseConfigured,
+} from "@/lib/firebase/config";
 
 let persistenceInitialized = false;
 
@@ -10,7 +14,13 @@ function getFirebaseApp() {
     throw new Error("Firebase n'est pas configuré.");
   }
 
-  return getApps().length ? getApp() : initializeApp(getFirebaseConfig());
+  if (getApps().length) {
+    return getApp();
+  }
+
+  return hasExplicitFirebaseConfig
+    ? initializeApp(getFirebaseConfig())
+    : initializeApp();
 }
 
 export function getFirebaseAuth() {

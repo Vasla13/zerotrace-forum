@@ -10,10 +10,13 @@ const rawFirebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+export const usesAppHostingAutoConfig =
+  process.env.NEXT_PUBLIC_FIREBASE_AUTOCONFIG === "true";
+
 export const missingFirebaseConfigurationMessage =
   "Configuration Firebase manquante. Lance `npm run firebase:setup -- --projectId forum-20260404`.";
 
-export const isFirebaseConfigured = [
+export const hasExplicitFirebaseConfig = [
   rawFirebaseConfig.apiKey,
   rawFirebaseConfig.authDomain,
   rawFirebaseConfig.projectId,
@@ -22,8 +25,11 @@ export const isFirebaseConfigured = [
   rawFirebaseConfig.appId,
 ].every(Boolean);
 
+export const isFirebaseConfigured =
+  hasExplicitFirebaseConfig || usesAppHostingAutoConfig;
+
 export function getFirebaseConfig(): FirebaseOptions {
-  if (!isFirebaseConfigured) {
+  if (!hasExplicitFirebaseConfig) {
     throw new Error(missingFirebaseConfigurationMessage);
   }
 
