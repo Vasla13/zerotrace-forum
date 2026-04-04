@@ -1,36 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Forum Moderne
 
-## Getting Started
+Forum web complet construit avec `Next.js`, `TypeScript`, `Firebase Auth` et `Cloud Firestore`.
 
-First, run the development server:
+Le projet Firebase dédié a été créé le `4 avril 2026` avec :
+
+- nom affiché : `forum`
+- project ID : `forum-20260404`
+- web app : `forum-web`
+
+## Stack
+
+- Frontend : `Next.js 16` + `React 19` + `Tailwind CSS 4`
+- Auth : `Firebase Authentication`
+- Base de données : `Cloud Firestore`
+- Validation : `Zod` + `react-hook-form`
+- Notifications : `sonner`
+
+## Fonctionnalités
+
+- inscription avec pseudo, email et mot de passe
+- connexion / déconnexion
+- session persistée via Firebase Auth
+- profil public avec pseudo, date d’inscription et nombre de posts
+- création, modification et suppression de ses propres posts
+- affichage des posts du plus récent au plus ancien
+- page détail d’un post
+- commentaires modifiables / supprimables par leur auteur
+- likes
+- recherche simple par mots-clés
+- pagination via chargement progressif
+- avatar par défaut généré depuis le pseudo
+
+## Arborescence
+
+```text
+forum/
+├─ src/
+│  ├─ app/
+│  │  ├─ login/
+│  │  ├─ register/
+│  │  ├─ posts/
+│  │  ├─ profile/
+│  │  ├─ layout.tsx
+│  │  ├─ page.tsx
+│  │  └─ globals.css
+│  ├─ components/
+│  │  ├─ auth-form.tsx
+│  │  ├─ forum-home.tsx
+│  │  ├─ post-card.tsx
+│  │  ├─ post-editor-form.tsx
+│  │  ├─ post-page.tsx
+│  │  └─ profile-page.tsx
+│  ├─ lib/
+│  │  ├─ data/
+│  │  │  ├─ users.ts
+│  │  │  ├─ posts.ts
+│  │  │  ├─ comments.ts
+│  │  │  └─ likes.ts
+│  │  ├─ firebase/
+│  │  ├─ types/
+│  │  ├─ utils/
+│  │  └─ validation/
+│  └─ providers/
+├─ scripts/
+│  └─ firebase-setup.mjs
+├─ firestore.rules
+├─ firestore.indexes.json
+├─ firebase.json
+├─ .firebaserc
+└─ .env.local.example
+```
+
+## Installation
+
+```bash
+npm install
+```
+
+Le projet est déjà branché localement sur Firebase via `.env.local`.
+
+## Lancement
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Puis ouvre `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Déploiement des règles Firestore
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Avant d’utiliser la base distante, pousse les règles et index :
 
-## Learn More
+```bash
+npm run firebase:deploy
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Étape Firebase restante
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Le projet Firebase et Firestore ont été créés automatiquement, mais l’activation du provider `Email/Password` dans Firebase Authentication n’a pas pu être automatisée proprement sans passer par l’interface Google.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+À faire une fois dans la console Firebase :
 
-## Deploy on Vercel
+1. Ouvrir `https://console.firebase.google.com/project/forum-20260404/authentication/providers`
+2. Activer `Email/Password`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Commandes utiles
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev
+npm run build
+npm run lint
+npm run firebase:setup -- --projectId forum-20260404
+npm run firebase:deploy
+```
+
+## Notes techniques
+
+- Les mots de passe sont hashés et gérés par Firebase Auth.
+- Les règles Firestore limitent la modification et la suppression au propriétaire du contenu.
+- Le rendu des posts et commentaires est en texte brut, sans HTML injecté.
+- La recherche s’appuie sur un index de mots-clés généré au moment de la création / édition des posts.

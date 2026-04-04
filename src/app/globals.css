@@ -1,26 +1,337 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #040814;
+  --background-soft: rgba(7, 12, 29, 0.82);
+  --surface: rgba(8, 15, 34, 0.8);
+  --surface-strong: rgba(11, 20, 45, 0.94);
+  --foreground: #eef4ff;
+  --muted: #7f90b8;
+  --line: rgba(118, 145, 236, 0.18);
+  --line-strong: rgba(71, 244, 255, 0.3);
+  --accent: #47f4ff;
+  --accent-dark: #12c8e6;
+  --accent-soft: rgba(71, 244, 255, 0.12);
+  --accent-secondary: #b4ff47;
+  --accent-hot: #ff7a5c;
+  --danger: #ff5c7a;
+  --shadow: 0 30px 90px rgba(0, 0, 0, 0.46);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-space-grotesk);
+  --font-display: var(--font-oxanium);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(71, 244, 255, 0.16), transparent 22%),
+    radial-gradient(circle at 82% 12%, rgba(180, 255, 71, 0.12), transparent 16%),
+    linear-gradient(180deg, #02040b 0%, #060b17 100%);
+  color: var(--foreground);
 }
 
 body {
-  background: var(--background);
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(4, 8, 20, 0.86), rgba(4, 8, 20, 0.95)),
+    linear-gradient(120deg, rgba(71, 244, 255, 0.05), transparent 34%),
+    linear-gradient(300deg, rgba(180, 255, 71, 0.04), transparent 28%),
+    linear-gradient(90deg, rgba(77, 111, 196, 0.06) 1px, transparent 1px),
+    linear-gradient(rgba(77, 111, 196, 0.06) 1px, transparent 1px),
+    linear-gradient(180deg, #02040b 0%, #081021 100%);
+  background-size: auto, auto, auto, 44px 44px, 44px 44px, auto;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-space-grotesk), sans-serif;
+  min-height: 100vh;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.045) 0,
+      rgba(255, 255, 255, 0.045) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+  mix-blend-mode: screen;
+  opacity: 0.08;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(71, 244, 255, 0.12), transparent 34%),
+    radial-gradient(circle at 80% 24%, rgba(180, 255, 71, 0.08), transparent 22%),
+    linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.03) 50%, transparent 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(71, 244, 255, 0.22);
+}
+
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0 1000px rgba(6, 11, 25, 0.96) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.forum-card {
+  @apply relative overflow-hidden border backdrop-blur-xl;
+  background:
+    linear-gradient(180deg, rgba(11, 19, 43, 0.94), rgba(7, 12, 28, 0.9)),
+    linear-gradient(135deg, rgba(71, 244, 255, 0.08), transparent 46%);
+  border-color: rgba(118, 145, 236, 0.18);
+  border-radius: 28px 18px 28px 18px;
+  box-shadow: var(--shadow);
+  isolation: isolate;
+}
+
+.forum-card::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border: 1px solid rgba(71, 244, 255, 0.06);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.forum-card::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 128px;
+  width: 128px;
+  background: radial-gradient(circle at top right, rgba(71, 244, 255, 0.16), transparent 68%);
+  pointer-events: none;
+}
+
+.forum-card-quiet {
+  @apply relative overflow-hidden border;
+  background:
+    linear-gradient(180deg, rgba(7, 12, 28, 0.92), rgba(7, 12, 28, 0.78)),
+    linear-gradient(135deg, rgba(180, 255, 71, 0.06), transparent 44%);
+  border-color: rgba(118, 145, 236, 0.14);
+  border-radius: 24px 16px 24px 16px;
+}
+
+.forum-input {
+  @apply w-full border py-3 text-sm text-[color:var(--foreground)] outline-none transition;
+  background: linear-gradient(180deg, rgba(6, 11, 25, 0.96), rgba(5, 10, 22, 0.92));
+  border-color: rgba(118, 145, 236, 0.18);
+  border-radius: 18px 12px 18px 12px;
+  box-shadow: inset 0 0 0 1px rgba(71, 244, 255, 0.02);
+  min-height: 54px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.forum-input:focus {
+  border-color: var(--line-strong);
+  box-shadow:
+    0 0 0 1px rgba(71, 244, 255, 0.24),
+    0 0 28px rgba(71, 244, 255, 0.12);
+}
+
+.forum-input::placeholder,
+.forum-textarea::placeholder {
+  color: rgba(127, 144, 184, 0.88);
+}
+
+.forum-input-shell {
+  @apply flex w-full items-center gap-3 border text-sm transition;
+  background: linear-gradient(180deg, rgba(6, 11, 25, 0.96), rgba(5, 10, 22, 0.92));
+  border-color: rgba(118, 145, 236, 0.18);
+  border-radius: 18px 12px 18px 12px;
+  box-shadow: inset 0 0 0 1px rgba(71, 244, 255, 0.02);
+  min-height: 54px;
+  padding-left: 1rem;
+  padding-right: 0.8rem;
+}
+
+.forum-input-shell:focus-within {
+  border-color: var(--line-strong);
+  box-shadow:
+    0 0 0 1px rgba(71, 244, 255, 0.24),
+    0 0 28px rgba(71, 244, 255, 0.12);
+}
+
+.forum-input-shell-icon {
+  flex-shrink: 0;
+  color: var(--accent);
+  height: 1rem;
+  width: 1rem;
+  opacity: 0.92;
+}
+
+.forum-input-shell-control {
+  @apply min-w-0 flex-1 border-0 bg-transparent py-3 text-sm text-[color:var(--foreground)] outline-none;
+  padding-left: 0;
+  padding-right: 2.6rem;
+}
+
+.forum-input-shell-control::placeholder {
+  color: rgba(127, 144, 184, 0.88);
+}
+
+.forum-textarea {
+  @apply w-full min-h-36 resize-y border px-4 py-3 text-sm text-[color:var(--foreground)] outline-none transition;
+  background: linear-gradient(180deg, rgba(6, 11, 25, 0.96), rgba(5, 10, 22, 0.92));
+  border-color: rgba(118, 145, 236, 0.18);
+  border-radius: 18px 12px 18px 12px;
+}
+
+.forum-textarea:focus {
+  border-color: var(--line-strong);
+  box-shadow:
+    0 0 0 1px rgba(71, 244, 255, 0.24),
+    0 0 28px rgba(71, 244, 255, 0.12);
+}
+
+.forum-button-primary {
+  @apply inline-flex items-center justify-center px-5 py-3 text-sm font-semibold text-[#021015] transition;
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  border-radius: 18px 8px 18px 8px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset,
+    0 0 28px rgba(71, 244, 255, 0.22);
+}
+
+.forum-button-primary:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.18) inset,
+    0 0 34px rgba(71, 244, 255, 0.3);
+}
+
+.forum-button-secondary {
+  @apply inline-flex items-center justify-center border px-5 py-3 text-sm font-semibold transition;
+  background: rgba(10, 18, 43, 0.84);
+  border-color: rgba(118, 145, 236, 0.18);
+  border-radius: 18px 8px 18px 8px;
+  color: var(--foreground);
+}
+
+.forum-button-secondary:hover {
+  border-color: rgba(71, 244, 255, 0.4);
+  box-shadow: 0 0 24px rgba(71, 244, 255, 0.12);
+}
+
+.forum-button-danger {
+  @apply inline-flex items-center justify-center border px-5 py-3 text-sm font-semibold transition;
+  background: rgba(39, 11, 24, 0.8);
+  border-color: rgba(255, 92, 122, 0.28);
+  border-radius: 18px 8px 18px 8px;
+  color: #ff91aa;
+}
+
+.forum-pill {
+  @apply inline-flex items-center gap-2 border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em];
+  background: rgba(71, 244, 255, 0.08);
+  border-color: rgba(71, 244, 255, 0.16);
+  border-radius: 999px 10px 999px 10px;
+  color: #8ff7ff;
+}
+
+.forum-link {
+  @apply transition;
+  color: #8ff7ff;
+}
+
+.forum-link:hover {
+  color: white;
+}
+
+.forum-richtext {
+  @apply whitespace-pre-wrap break-words text-sm leading-7;
+  color: rgba(237, 243, 255, 0.96);
+}
+
+.forum-muted {
+  color: var(--muted);
+}
+
+.forum-title {
+  font-family: var(--font-oxanium), sans-serif;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.forum-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.forum-brandmark {
+  position: relative;
+  display: flex;
+  height: 3rem;
+  width: 3rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(71, 244, 255, 0.22);
+  border-radius: 18px 8px 18px 8px;
+  background:
+    linear-gradient(135deg, rgba(71, 244, 255, 0.24), rgba(180, 255, 71, 0.14)),
+    linear-gradient(180deg, rgba(8, 14, 33, 0.96), rgba(8, 14, 33, 0.76));
+  box-shadow: 0 0 28px rgba(71, 244, 255, 0.16);
+}
+
+.forum-brandmark::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: inherit;
+}
+
+.forum-brandmark::after {
+  content: "";
+  position: absolute;
+  bottom: 0.65rem;
+  left: 0.7rem;
+  height: 2px;
+  width: 1.15rem;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+  box-shadow: 0 0 14px rgba(71, 244, 255, 0.28);
+}
+
+@media (max-width: 768px) {
+  .forum-card {
+    border-radius: 24px 16px 24px 16px;
+  }
 }
