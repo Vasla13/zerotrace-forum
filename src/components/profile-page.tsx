@@ -96,10 +96,10 @@ export function ProfilePage({ username }: ProfilePageProps) {
   if (loading) {
     return (
       <div className="forum-grid mx-auto w-full max-w-6xl">
-        <div className="forum-card h-72 animate-pulse p-8" />
+        <div className="forum-card h-56 animate-pulse p-8" />
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="forum-card h-60 animate-pulse p-8" />
-          <div className="forum-card h-60 animate-pulse p-8" />
+          <div className="forum-card h-48 animate-pulse p-8" />
+          <div className="forum-card h-48 animate-pulse p-8" />
         </div>
       </div>
     );
@@ -112,7 +112,7 @@ export function ProfilePage({ username }: ProfilePageProps) {
           <h1 className="forum-title text-4xl font-semibold">
             Impossible de charger ce profil.
           </h1>
-          <p className="mt-4 text-sm text-red-700">{error}</p>
+          <p className="mt-4 text-sm text-[color:var(--danger)]">{error}</p>
         </section>
       </div>
     );
@@ -137,9 +137,9 @@ export function ProfilePage({ username }: ProfilePageProps) {
 
   return (
     <div className="forum-grid mx-auto w-full max-w-6xl">
-      <section className="forum-card overflow-hidden p-8 sm:p-10">
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="flex items-start gap-5">
+      <section className="forum-card overflow-hidden p-6 sm:p-8">
+        <div className="forum-section-head">
+          <div className="flex items-start gap-4">
             <Avatar
               username={profile.username}
               seed={profile.uid}
@@ -150,54 +150,44 @@ export function ProfilePage({ username }: ProfilePageProps) {
               <span className="forum-pill">
                 {isCurrentUser ? "Ton profil" : "Profil public"}
               </span>
-              <h1 className="forum-title mt-5 text-5xl font-semibold">
+              <h1 className="forum-title mt-4 text-4xl font-semibold sm:text-5xl">
                 {profile.username}
               </h1>
-              <p className="forum-muted mt-4 max-w-2xl text-sm">
-                Depuis{" "}
-                <span className="font-semibold text-[color:var(--foreground)]">
-                  {formatJoinedDate(profile.createdAt)}
-                </span>
+              <p className="forum-muted mt-3 text-sm">
+                Actif depuis {formatJoinedDate(profile.createdAt)}
               </p>
             </div>
           </div>
 
-          <div className="grid gap-4">
-            <div className="forum-card-quiet p-5">
-              <div className="forum-muted flex items-center gap-2 text-xs uppercase tracking-[0.24em]">
-                <CalendarDays className="h-4 w-4" />
-                Date d’inscription
-              </div>
-              <p className="mt-3 text-lg font-semibold">
-                {formatJoinedDate(profile.createdAt)}
-              </p>
-            </div>
-            <div className="forum-card-quiet p-5">
-              <div className="forum-muted flex items-center gap-2 text-xs uppercase tracking-[0.24em]">
-                <FileText className="h-4 w-4" />
-                Nombre de posts
-              </div>
-              <p className="mt-3 text-lg font-semibold">{postCount}</p>
-            </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="forum-stat-chip">
+              <CalendarDays className="h-3.5 w-3.5 text-[color:var(--accent)]" />
+              <strong>{formatJoinedDate(profile.createdAt)}</strong>
+            </span>
+            <span className="forum-stat-chip">
+              <FileText className="h-3.5 w-3.5 text-[color:var(--accent-secondary)]" />
+              <strong>{postCount}</strong>
+              posts
+            </span>
             {isCurrentUser ? (
               <Link href="/posts/new" className="forum-button-primary">
                 <Plus className="mr-2 h-4 w-4" />
-                Publier un nouveau sujet
+                Poster
               </Link>
             ) : null}
           </div>
         </div>
       </section>
 
-      <section className="forum-card p-6 sm:p-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+      <section className="forum-card p-6 sm:p-7">
+        <div className="forum-section-head">
           <div>
             <span className="forum-pill">Flux</span>
-            <h2 className="forum-title mt-4 text-4xl font-semibold">
+            <h2 className="forum-title mt-4 text-3xl font-semibold sm:text-4xl">
               Posts de {profile.username}
             </h2>
           </div>
-          <p className="forum-muted text-sm">12 derniers.</p>
+          <span className="forum-inline-note">12 derniers</span>
         </div>
 
         {posts.length ? (
@@ -207,9 +197,9 @@ export function ProfilePage({ username }: ProfilePageProps) {
             ))}
           </div>
         ) : (
-          <div className="forum-card-quiet mt-8 px-6 py-12 text-center">
-            <h3 className="forum-title text-3xl font-semibold">
-              Aucun post.
+          <div className="forum-card-quiet mt-8 px-6 py-10 text-center">
+            <h3 className="forum-title text-2xl font-semibold sm:text-3xl">
+              Aucun post
             </h3>
             <p className="forum-muted mt-3 text-sm">Aucun signal publié.</p>
           </div>

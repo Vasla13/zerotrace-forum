@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useDeferredValue, useEffect, useState } from "react";
-import { ArrowRight, MessageSquareText, Plus, Search, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  MessageSquareText,
+  Plus,
+  Search,
+  Sparkles,
+  X,
+} from "lucide-react";
 import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { InputShell } from "@/components/input-shell";
@@ -100,86 +107,154 @@ export function ForumHome() {
     return <ForumSetupNotice />;
   }
 
+  const resultLabel = `${posts.length} ${posts.length > 1 ? "résultats" : "résultat"}`;
+
   return (
     <div className="forum-grid w-full">
-      <section className="forum-card grid gap-8 overflow-hidden p-8 sm:p-10 lg:grid-cols-[1.1fr_0.9fr]">
-        <div>
-          <span className="forum-pill">
-            <Sparkles className="h-3.5 w-3.5" />
-            ZeroTrace
-          </span>
-          <h1 className="forum-title mt-6 max-w-3xl text-5xl font-semibold leading-none sm:text-6xl">
-            Un forum net, vivant, sous tension.
-          </h1>
-          <p className="forum-muted mt-5 max-w-xl text-sm">
-            Publie. Réponds. Retrouve vite le bon sujet.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+      <section className="forum-card grid gap-6 overflow-hidden p-6 sm:p-8 lg:grid-cols-[1.12fr_0.88fr]">
+        <div className="flex flex-col justify-between">
+          <div>
+            <div className="forum-toolbar">
+              <span className="forum-pill">
+                <Sparkles className="h-3.5 w-3.5" />
+                ZeroTrace
+              </span>
+              <span className="forum-stat-chip">
+                <MessageSquareText className="h-3.5 w-3.5 text-[color:var(--accent)]" />
+                <strong>{posts.length}</strong>
+                {isSearching ? "match" : "live"}
+              </span>
+            </div>
+            <h1 className="forum-title mt-5 max-w-3xl text-4xl font-semibold leading-none sm:text-5xl lg:text-6xl">
+              Trouve le bon thread. Coupe le bruit.
+            </h1>
+            <p className="forum-muted mt-4 max-w-xl text-sm">
+              Publie vite. Réponds net. Reste sur l’essentiel.
+            </p>
+          </div>
+
+          <div className="mt-6 max-w-2xl">
+            <InputShell
+              icon={Search}
+              placeholder="Recherche directe…"
+              type="search"
+              value={searchInput}
+              onChange={(event) => {
+                setSearchInput(event.target.value);
+              }}
+            />
+          </div>
+
+          <div className="forum-toolbar mt-4">
             {user ? (
               <Link href="/posts/new" className="forum-button-primary">
                 <Plus className="mr-2 h-4 w-4" />
-                Écrire un post
+                Poster
               </Link>
             ) : (
               <>
                 <Link href="/register" className="forum-button-primary">
-                  Créer un compte
+                  Entrer
                 </Link>
-                <Link href="/login" className="forum-button-secondary">
-                  Se connecter
+                <Link href="/login" className="forum-button-ghost">
+                  Connexion
                 </Link>
               </>
             )}
+            {searchInput ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchInput("");
+                }}
+                className="forum-button-ghost"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Effacer
+              </button>
+            ) : null}
           </div>
         </div>
 
-        <div className="grid gap-4">
-          <div className="forum-card-quiet p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--accent-secondary)]">
-              Flux
-            </p>
-            <p className="mt-3 text-lg font-semibold">
-              {profile ? `Bienvenue ${profile.username}` : "Interface clean"}
-            </p>
+        <div className="forum-signal-panel">
+          <div className="forum-inline-note">signal mesh</div>
+          <div className="mt-4 forum-signal-grid">
+            {Array.from({ length: 12 }).map((_, index) => {
+              const isActive = [0, 1, 4, 7, 8, 10].includes(index);
+              const isSecondary = [5, 11].includes(index);
+
+              return (
+                <span
+                  key={index}
+                  className={[
+                    "forum-signal-cell",
+                    isActive ? "forum-signal-cell-active" : "",
+                    isSecondary ? "forum-signal-cell-secondary" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                />
+              );
+            })}
           </div>
-          <div className="forum-card-quiet p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--accent-secondary)]">
-              Système
-            </p>
-            <p className="mt-3 text-lg font-semibold">Auth, profils, recherche.</p>
+          <div className="forum-divider mt-5" />
+          <div className="mt-5 grid gap-2 sm:grid-cols-3">
+            <div className="forum-stat-chip justify-between">
+              <span>Flux</span>
+              <strong>ouvert</strong>
+            </div>
+            <div className="forum-stat-chip justify-between">
+              <span>Mode</span>
+              <strong>posts</strong>
+            </div>
+            <div className="forum-stat-chip justify-between">
+              <span>Recherche</span>
+              <strong>{isSearching ? "active" : "idle"}</strong>
+            </div>
           </div>
-          <div className="forum-card-quiet p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--accent-secondary)]">
-              Live
-            </p>
-            <p className="mt-3 text-lg font-semibold">Posts et commentaires actifs.</p>
+          <div className="mt-5 text-sm text-[color:var(--foreground)]">
+            {profile ? `Connecté : ${profile.username}` : "Lecture publique immédiate"}
           </div>
+          <p className="forum-muted mt-2 text-sm">
+            Le cœur du forum reste visible sans surcharge.
+          </p>
         </div>
       </section>
 
-      <section className="forum-card p-6 sm:p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <section className="forum-card p-6 sm:p-7">
+        <div className="forum-section-head">
           <div>
-            <span className="forum-pill">
-              <MessageSquareText className="h-3.5 w-3.5" />
-              Flux
-            </span>
-            <h2 className="forum-title mt-4 text-4xl font-semibold">
-              {isSearching ? "Résultats" : "Derniers posts"}
+            <div className="forum-toolbar">
+              <span className="forum-pill">
+                <MessageSquareText className="h-3.5 w-3.5" />
+                {isSearching ? "Recherche" : "Flux"}
+              </span>
+              <span className="forum-inline-note">
+                {isSearching ? resultLabel : "plus récent d’abord"}
+              </span>
+            </div>
+            <h2 className="forum-title mt-4 text-3xl font-semibold sm:text-4xl">
+              {isSearching ? "Résultats" : "Posts récents"}
             </h2>
-            <p className="forum-muted mt-2 text-sm">Du plus récent au plus ancien.</p>
           </div>
-
-          <InputShell
-            icon={Search}
-            shellClassName="w-full max-w-xl"
-            placeholder="Rechercher un post, un sujet, un mot-clé…"
-            type="search"
-            value={searchInput}
-            onChange={(event) => {
-              setSearchInput(event.target.value);
-            }}
-          />
+          <div className="forum-toolbar">
+            {isSearching ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchInput("");
+                }}
+                className="forum-button-ghost"
+              >
+                Tout voir
+              </button>
+            ) : null}
+            {user ? (
+              <Link href="/posts/new" className="forum-button-ghost">
+                Écrire
+              </Link>
+            ) : null}
+          </div>
         </div>
 
         {error ? (
@@ -193,7 +268,7 @@ export function ForumHome() {
             {Array.from({ length: 4 }).map((_, index) => (
               <div
                 key={index}
-                className="forum-card h-60 animate-pulse bg-[rgba(10,16,34,0.74)] p-6"
+                className="forum-card h-48 animate-pulse bg-[rgba(10,16,34,0.74)] p-6"
               />
             ))}
           </div>
@@ -210,27 +285,27 @@ export function ForumHome() {
                   type="button"
                   onClick={handleLoadMore}
                   disabled={loadingMore}
-                  className="forum-button-secondary"
+                  className="forum-button-ghost"
                 >
-                  {loadingMore ? "Chargement…" : "Charger plus"}
+                  {loadingMore ? "Chargement…" : "Suite"}
                 </button>
               </div>
             ) : null}
           </>
         ) : (
-          <div className="forum-card-quiet mt-8 flex flex-col items-center justify-center px-6 py-12 text-center">
-            <h3 className="forum-title text-3xl font-semibold">
-              {isSearching ? "Aucun résultat." : "Le forum est vide."}
+          <div className="forum-card-quiet mt-8 flex flex-col items-center justify-center px-6 py-10 text-center">
+            <h3 className="forum-title text-2xl font-semibold sm:text-3xl">
+              {isSearching ? "Aucun résultat" : "Aucun post"}
             </h3>
             <p className="forum-muted mt-3 max-w-xl text-sm">
-              {isSearching ? "Essaie un autre mot-clé." : "Crée le premier sujet."}
+              {isSearching ? "Essaie un autre mot-clé." : "Ouvre le premier sujet."}
             </p>
             <div className="mt-6">
               <Link
                 href={user ? "/posts/new" : "/register"}
                 className="forum-button-primary"
               >
-                {user ? "Créer le premier post" : "Créer un compte"}
+                {user ? "Poster" : "Entrer"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>

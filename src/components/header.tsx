@@ -11,7 +11,7 @@ import { getErrorMessage } from "@/lib/utils/errors";
 import { useAuth } from "@/providers/auth-provider";
 import { toast } from "sonner";
 
-const publicLinks = [{ href: "/", label: "Accueil" }];
+const publicLinks = [{ href: "/", label: "Flux" }];
 
 export function Header() {
   const pathname = usePathname();
@@ -36,22 +36,22 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-[rgba(71,244,255,0.12)] bg-[rgba(3,7,17,0.76)] shadow-[0_14px_48px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
-      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-4">
           <Link href="/" className="group flex items-center gap-3">
             <div className="forum-brandmark text-sm font-bold text-white transition group-hover:-translate-y-0.5">
               ZT
             </div>
             <div>
-              <div className="forum-title text-2xl font-semibold uppercase tracking-[0.14em]">
+              <div className="forum-title text-xl font-semibold uppercase tracking-[0.14em] sm:text-2xl">
                 ZeroTrace
               </div>
               <div className="forum-muted text-[10px] uppercase tracking-[0.3em]">
-                Forum réseau
+                forum réseau
               </div>
             </div>
           </Link>
-          <nav className="hidden items-center gap-2 md:flex">
+          <nav className="hidden items-center gap-2 rounded-full border border-[rgba(118,145,236,0.14)] bg-[rgba(7,12,28,0.52)] p-1 md:flex">
             {publicLinks.map((link) => {
               const active =
                 link.href === "/"
@@ -76,23 +76,23 @@ export function Header() {
           </nav>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {user ? (
             <>
               <Link href="/posts/new" className="forum-button-primary">
-                <Plus className="mr-2 h-4 w-4" />
-                Nouveau
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Nouveau</span>
               </Link>
               {profile ? (
                 <Link
                   href={`/profile/${profile.usernameLower}`}
-                  className="forum-button-secondary gap-3"
+                  className="forum-button-ghost gap-2"
                 >
                   <Avatar username={profile.username} size="sm" />
                   <span className="hidden sm:inline">{profile.username}</span>
                 </Link>
               ) : (
-                <span className="forum-button-secondary">
+                <span className="forum-button-ghost">
                   <UserRound className="mr-2 h-4 w-4" />
                   Profil…
                 </span>
@@ -101,19 +101,20 @@ export function Header() {
                 type="button"
                 onClick={handleSignOut}
                 disabled={isSigningOut}
-                className="forum-button-secondary"
+                className="forum-button-icon"
+                aria-label="Se déconnecter"
+                title={isSigningOut ? "Déconnexion…" : "Se déconnecter"}
               >
-                <LogOut className="mr-2 h-4 w-4" />
-                {isSigningOut ? "Déconnexion…" : "Déconnexion"}
+                <LogOut className="h-4 w-4" />
               </button>
             </>
           ) : (
             <>
-              <Link href="/login" className="forum-button-secondary">
+              <Link href="/login" className="forum-button-ghost">
                 Connexion
               </Link>
               <Link href="/register" className="forum-button-primary">
-                Inscription
+                Accès
               </Link>
             </>
           )}

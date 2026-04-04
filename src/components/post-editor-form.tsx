@@ -128,7 +128,7 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
   if (mode === "edit" && loadingPost) {
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <div className="forum-card h-96 animate-pulse p-8" />
+        <div className="forum-card h-80 animate-pulse p-8" />
       </div>
     );
   }
@@ -164,102 +164,104 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-      <section className="forum-card p-8 sm:p-10">
-        <span className="forum-pill">
-          <PenLine className="h-3.5 w-3.5" />
-          {mode === "create" ? "Nouvelle discussion" : "Édition"}
-        </span>
-        <h1 className="forum-title mt-6 text-5xl font-semibold">
-          {mode === "create" ? "Lancer un sujet." : "Corriger le signal."}
-        </h1>
-        <p className="forum-muted mt-4 max-w-2xl text-sm">
-          Titre court. Contenu clair.
-        </p>
+    <div className="mx-auto w-full max-w-4xl">
+      <section className="forum-card p-6 sm:p-8">
+        <div className="forum-section-head items-start">
+          <div>
+            <span className="forum-pill">
+              <PenLine className="h-3.5 w-3.5" />
+              {mode === "create" ? "Nouveau sujet" : "Édition"}
+            </span>
+            <h1 className="forum-title mt-5 text-4xl font-semibold sm:text-5xl">
+              {mode === "create" ? "Lancer un sujet" : "Ajuster le signal"}
+            </h1>
+          </div>
+          <span className="forum-inline-note">
+            {mode === "create" ? "publication directe" : "mise à jour live"}
+          </span>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-8 grid gap-6">
+        <div className="forum-toolbar mt-5">
+          <span className="forum-stat-chip">
+            <strong>120</strong>
+            titre max
+          </span>
+          <span className="forum-stat-chip">
+            <strong>5000</strong>
+            contenu max
+          </span>
+          <span className="forum-stat-chip">
+            <ShieldCheck className="h-3.5 w-3.5 text-[color:var(--accent-secondary)]" />
+            auteur only
+          </span>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-7 grid gap-5">
           <label className="grid gap-2">
-            <span className="text-sm font-medium">Titre</span>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium">Titre</span>
+              <span className="forum-inline-note">{titleValue.length}/120</span>
+            </div>
             <input
               {...register("title")}
               className="forum-input"
               placeholder="Exemple : Comment structurer un projet Next.js + Firebase ?"
             />
-            <div className="flex justify-between text-xs">
-              <span className="text-red-600">{errors.title?.message}</span>
-              <span className="forum-muted">{titleValue.length}/120</span>
-            </div>
+            {errors.title ? (
+              <span className="text-xs text-[color:var(--danger)]">
+                {errors.title.message}
+              </span>
+            ) : null}
           </label>
 
           <label className="grid gap-2">
-            <span className="text-sm font-medium">Contenu</span>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium">Contenu</span>
+              <span className="forum-inline-note">{contentValue.length}/5000</span>
+            </div>
             <textarea
               {...register("content")}
               className="forum-textarea min-h-72"
               placeholder="Contexte, problème, résultat attendu."
             />
-            <div className="flex justify-between text-xs">
-              <span className="text-red-600">{errors.content?.message}</span>
-              <span className="forum-muted">{contentValue.length}/5000</span>
-            </div>
+            {errors.content ? (
+              <span className="text-xs text-[color:var(--danger)]">
+                {errors.content.message}
+              </span>
+            ) : null}
           </label>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="forum-button-primary"
-            >
-              <Send className="mr-2 h-4 w-4" />
-              {isSubmitting
-                ? mode === "create"
-                  ? "Publication…"
-                  : "Enregistrement…"
-                : mode === "create"
-                  ? "Publier"
-                  : "Enregistrer"}
-            </button>
-            <Link
-              href={mode === "edit" && postId ? `/posts/${postId}` : "/"}
-              className="forum-button-secondary"
-            >
-              Annuler
-            </Link>
+          <div className="forum-divider" />
+
+          <div className="forum-toolbar justify-between">
+            <span className="forum-muted text-sm">
+              Clair, court, utile.
+            </span>
+            <div className="forum-toolbar">
+              <Link
+                href={mode === "edit" && postId ? `/posts/${postId}` : "/"}
+                className="forum-button-ghost"
+              >
+                Annuler
+              </Link>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="forum-button-primary"
+              >
+                <Send className="mr-2 h-4 w-4" />
+                {isSubmitting
+                  ? mode === "create"
+                    ? "Publication…"
+                    : "Enregistrement…"
+                  : mode === "create"
+                    ? "Publier"
+                    : "Enregistrer"}
+              </button>
+            </div>
           </div>
         </form>
       </section>
-
-      <aside className="grid gap-4">
-        <section className="forum-card-quiet p-6">
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="h-5 w-5 text-[color:var(--accent-dark)]" />
-            <p className="text-sm font-semibold">Cadre</p>
-          </div>
-          <div className="mt-4 grid gap-3 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="forum-muted">Titre</span>
-              <span className="font-semibold">120</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="forum-muted">Contenu</span>
-              <span className="font-semibold">5000</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="forum-muted">Edition</span>
-              <span className="font-semibold">Auteur</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="forum-card-quiet p-6">
-          <p className="text-sm font-semibold">Stack</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="forum-pill">Firebase</span>
-            <span className="forum-pill">Zod</span>
-            <span className="forum-pill">Next</span>
-          </div>
-        </section>
-      </aside>
     </div>
   );
 }

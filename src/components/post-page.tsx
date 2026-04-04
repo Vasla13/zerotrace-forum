@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
-import { deleteForumPost, subscribeToPost } from "@/lib/data/posts";
 import {
   createPostComment,
   deletePostComment,
@@ -20,6 +19,7 @@ import {
   updatePostComment,
 } from "@/lib/data/comments";
 import { subscribeToLikeState, togglePostLike } from "@/lib/data/likes";
+import { deleteForumPost, subscribeToPost } from "@/lib/data/posts";
 import type { ForumComment, ForumPost, LikeState } from "@/lib/types/forum";
 import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
 import { getErrorMessage } from "@/lib/utils/errors";
@@ -214,7 +214,7 @@ export function PostPage({ postId }: PostPageProps) {
   if (post === undefined || authLoading) {
     return (
       <div className="mx-auto w-full max-w-5xl">
-        <div className="forum-card h-[520px] animate-pulse p-8" />
+        <div className="forum-card h-[420px] animate-pulse p-8" />
       </div>
     );
   }
@@ -226,7 +226,7 @@ export function PostPage({ postId }: PostPageProps) {
           <h1 className="forum-title text-4xl font-semibold">
             Impossible de charger ce post.
           </h1>
-          <p className="mt-4 text-sm text-red-700">{error}</p>
+          <p className="mt-4 text-sm text-[color:var(--danger)]">{error}</p>
         </section>
       </div>
     );
@@ -248,260 +248,251 @@ export function PostPage({ postId }: PostPageProps) {
   }
 
   const isAuthor = user?.uid === post.author.uid;
+  const wasEdited =
+    Boolean(post.createdAt && post.updatedAt) &&
+    post.createdAt?.getTime() !== post.updatedAt?.getTime();
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-      <section className="forum-grid">
-        <article className="forum-card p-8 sm:p-10">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex min-w-0 items-start gap-4">
-              <Avatar username={post.author.username} seed={post.author.uid} />
-              <div className="min-w-0">
-                <Link
-                  href={`/profile/${post.author.usernameLower}`}
-                  className="block truncate text-sm font-semibold hover:text-[color:var(--accent-dark)]"
-                >
-                  {post.author.username}
-                </Link>
-                <div className="forum-muted mt-1 flex flex-wrap items-center gap-2 text-xs">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  <span title={formatAbsoluteDate(post.createdAt)}>
-                    {formatRelativeDate(post.createdAt)}
-                  </span>
-                  <span>·</span>
-                  <span>{formatAbsoluteDate(post.createdAt)}</span>
-                </div>
-              </div>
-            </div>
-
-            {isAuthor ? (
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  href={`/posts/${post.id}/edit`}
-                  className="forum-button-secondary"
-                >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Modifier
-                </Link>
-                <button
-                  type="button"
-                  onClick={handleDeletePost}
-                  disabled={busyAction === "post:delete"}
-                  className="forum-button-danger"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {busyAction === "post:delete" ? "Suppression…" : "Supprimer"}
-                </button>
-              </div>
-            ) : null}
-          </div>
-
-          <h1 className="forum-title mt-8 text-5xl font-semibold leading-tight">
-            {post.title}
-          </h1>
-
-          <div className="forum-richtext mt-8 text-[15px] leading-8">
-            {post.content}
-          </div>
-
-          <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-[color:var(--line)] pt-5">
-            <button
-              type="button"
-              onClick={handleToggleLike}
-              disabled={busyAction === "like"}
-              className="forum-button-secondary"
-            >
-              <Heart
-                className={`mr-2 h-4 w-4 ${
-                  likeState.likedByUser ? "fill-current text-red-500" : ""
-                }`}
-              />
-              {likeState.likedByUser ? "Aimé" : "J’aime"} ({likeState.count})
-            </button>
-            <span className="forum-pill">
-              <MessageSquareMore className="h-3.5 w-3.5" />
-              {comments.length} réponse{comments.length > 1 ? "s" : ""}
-            </span>
-          </div>
-        </article>
-
-        <section className="forum-card p-8 sm:p-10">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <span className="forum-pill">Commentaires</span>
-              <h2 className="forum-title mt-4 text-4xl font-semibold">
-                Réponses
-              </h2>
-            </div>
-          </div>
-
-          {user ? (
-            <div className="mt-8 grid gap-3">
-              <textarea
-                className="forum-textarea min-h-36"
-                placeholder="Ajouter une réponse claire…"
-                value={commentDraft}
-                onChange={(event) => {
-                  setCommentDraft(event.target.value);
-                }}
-              />
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="forum-muted text-xs">
-                  {commentDraft.trim().length}/1000
-                </span>
-                <button
-                  type="button"
-                  onClick={handleCreateComment}
-                  disabled={busyAction === "comment:create"}
-                  className="forum-button-primary"
-                >
-                  {busyAction === "comment:create" ? "Envoi..." : "Envoyer"}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="forum-card-quiet mt-8 flex flex-wrap items-center justify-between gap-4 p-5">
-              <p className="forum-muted text-sm">Connexion requise.</p>
+    <div className="mx-auto grid w-full max-w-5xl gap-6">
+      <article className="forum-card p-6 sm:p-8">
+        <div className="forum-section-head items-start">
+          <div className="flex min-w-0 items-start gap-4">
+            <Avatar username={post.author.username} seed={post.author.uid} />
+            <div className="min-w-0">
               <Link
-                href={`/login?next=${encodeURIComponent(`/posts/${postId}`)}`}
-                className="forum-button-secondary"
+                href={`/profile/${post.author.usernameLower}`}
+                className="block truncate text-sm font-semibold hover:text-[color:var(--accent-dark)]"
               >
-                Se connecter
+                {post.author.username}
               </Link>
+              <div className="forum-muted mt-1 flex flex-wrap items-center gap-2 text-xs">
+                <CalendarDays className="h-3.5 w-3.5" />
+                <span title={formatAbsoluteDate(post.createdAt)}>
+                  {formatRelativeDate(post.createdAt)}
+                </span>
+                {wasEdited ? <span>· modifié</span> : null}
+              </div>
             </div>
-          )}
+          </div>
 
-          <div className="mt-8 grid gap-4">
-            {comments.length ? (
-              comments.map((comment) => {
-                const isCommentAuthor = user?.uid === comment.author.uid;
-                const isEditing = editingCommentId === comment.id;
+          {isAuthor ? (
+            <div className="forum-toolbar">
+              <Link
+                href={`/posts/${post.id}/edit`}
+                className="forum-button-icon"
+                title="Modifier"
+                aria-label="Modifier le post"
+              >
+                <Pencil className="h-4 w-4" />
+              </Link>
+              <button
+                type="button"
+                onClick={handleDeletePost}
+                disabled={busyAction === "post:delete"}
+                className="forum-button-icon forum-button-icon-danger"
+                title="Supprimer"
+                aria-label="Supprimer le post"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ) : null}
+        </div>
 
-                return (
-                  <article key={comment.id} className="forum-card-quiet p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <Avatar
-                          username={comment.author.username}
-                          seed={comment.author.uid}
-                          size="sm"
-                        />
-                        <div className="min-w-0">
-                          <Link
-                            href={`/profile/${comment.author.usernameLower}`}
-                            className="block truncate text-sm font-semibold hover:text-[color:var(--accent-dark)]"
-                          >
-                            {comment.author.username}
-                          </Link>
-                          <p
-                            className="forum-muted text-xs"
-                            title={formatAbsoluteDate(comment.createdAt)}
-                          >
-                            {formatRelativeDate(comment.createdAt)}
-                          </p>
-                        </div>
+        <div className="forum-toolbar mt-5">
+          <button
+            type="button"
+            onClick={handleToggleLike}
+            disabled={busyAction === "like"}
+            className="forum-button-ghost"
+          >
+            <Heart
+              className={`mr-2 h-4 w-4 ${
+                likeState.likedByUser ? "fill-current text-red-500" : ""
+              }`}
+            />
+            {likeState.count}
+          </button>
+          <span className="forum-stat-chip">
+            <MessageSquareMore className="h-3.5 w-3.5 text-[color:var(--accent)]" />
+            <strong>{comments.length}</strong>
+            réponse{comments.length > 1 ? "s" : ""}
+          </span>
+          <span className="forum-inline-note" title={formatAbsoluteDate(post.createdAt)}>
+            {formatAbsoluteDate(post.createdAt)}
+          </span>
+        </div>
+
+        <h1 className="forum-title mt-6 text-4xl font-semibold leading-tight sm:text-5xl">
+          {post.title}
+        </h1>
+
+        <div className="forum-richtext mt-6 text-[15px] leading-8">
+          {post.content}
+        </div>
+      </article>
+
+      <section className="forum-card p-6 sm:p-8">
+        <div className="forum-section-head">
+          <div>
+            <span className="forum-pill">Réponses</span>
+            <h2 className="forum-title mt-4 text-3xl font-semibold sm:text-4xl">
+              Thread
+            </h2>
+          </div>
+          <span className="forum-inline-note">{comments.length} actif(s)</span>
+        </div>
+
+        {user ? (
+          <div className="forum-card-quiet mt-6 p-4 sm:p-5">
+            <textarea
+              className="forum-textarea min-h-32"
+              placeholder="Réponds sans détour…"
+              value={commentDraft}
+              onChange={(event) => {
+                setCommentDraft(event.target.value);
+              }}
+            />
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <span className="forum-inline-note">
+                {commentDraft.trim().length}/1000
+              </span>
+              <button
+                type="button"
+                onClick={handleCreateComment}
+                disabled={busyAction === "comment:create"}
+                className="forum-button-primary"
+              >
+                {busyAction === "comment:create" ? "Envoi…" : "Répondre"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="forum-card-quiet mt-6 flex flex-wrap items-center justify-between gap-4 p-5">
+            <p className="forum-muted text-sm">Connexion requise pour répondre.</p>
+            <Link
+              href={`/login?next=${encodeURIComponent(`/posts/${postId}`)}`}
+              className="forum-button-ghost"
+            >
+              Entrer
+            </Link>
+          </div>
+        )}
+
+        <div className="mt-6 grid gap-4">
+          {comments.length ? (
+            comments.map((comment) => {
+              const isCommentAuthor = user?.uid === comment.author.uid;
+              const isEditing = editingCommentId === comment.id;
+
+              return (
+                <article
+                  key={comment.id}
+                  className="forum-thread-item forum-card-quiet p-4 sm:p-5"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar
+                        username={comment.author.username}
+                        seed={comment.author.uid}
+                        size="sm"
+                      />
+                      <div className="min-w-0">
+                        <Link
+                          href={`/profile/${comment.author.usernameLower}`}
+                          className="block truncate text-sm font-semibold hover:text-[color:var(--accent-dark)]"
+                        >
+                          {comment.author.username}
+                        </Link>
+                        <p
+                          className="forum-muted text-xs"
+                          title={formatAbsoluteDate(comment.createdAt)}
+                        >
+                          {formatRelativeDate(comment.createdAt)}
+                        </p>
                       </div>
-
-                      {isCommentAuthor ? (
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            className="forum-button-secondary"
-                            onClick={() => {
-                              setEditingCommentId(comment.id);
-                              setEditingCommentDraft(comment.content);
-                            }}
-                          >
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Modifier
-                          </button>
-                          <button
-                            type="button"
-                            className="forum-button-danger"
-                            onClick={() => {
-                              void handleDeleteComment(comment.id);
-                            }}
-                            disabled={
-                              busyAction === `comment:delete:${comment.id}`
-                            }
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Supprimer
-                          </button>
-                        </div>
-                      ) : null}
                     </div>
 
-                    {isEditing ? (
-                      <div className="mt-4 grid gap-3">
-                        <textarea
-                          className="forum-textarea min-h-32"
-                          value={editingCommentDraft}
-                          onChange={(event) => {
-                            setEditingCommentDraft(event.target.value);
+                    {isCommentAuthor ? (
+                      <div className="forum-toolbar">
+                        <button
+                          type="button"
+                          className="forum-button-icon"
+                          onClick={() => {
+                            setEditingCommentId(comment.id);
+                            setEditingCommentDraft(comment.content);
                           }}
-                        />
-                        <div className="flex flex-wrap gap-3">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              void handleSaveEditedComment(comment.id);
-                            }}
-                            disabled={
-                              busyAction === `comment:update:${comment.id}`
-                            }
-                            className="forum-button-primary"
-                          >
-                            {busyAction === `comment:update:${comment.id}`
-                              ? "Enregistrement…"
-                              : "Enregistrer"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingCommentId(null);
-                              setEditingCommentDraft("");
-                            }}
-                            className="forum-button-secondary"
-                          >
-                            Annuler
-                          </button>
-                        </div>
+                          title="Modifier"
+                          aria-label="Modifier le commentaire"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="forum-button-icon forum-button-icon-danger"
+                          onClick={() => {
+                            void handleDeleteComment(comment.id);
+                          }}
+                          disabled={busyAction === `comment:delete:${comment.id}`}
+                          title="Supprimer"
+                          aria-label="Supprimer le commentaire"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
-                    ) : (
-                      <div className="forum-richtext mt-4">{comment.content}</div>
-                    )}
-                  </article>
-                );
-              })
-            ) : (
-              <div className="forum-card-quiet px-6 py-12 text-center">
-                <h3 className="forum-title text-3xl font-semibold">
-                  Aucune réponse.
-                </h3>
-                <p className="forum-muted mt-3 text-sm">Lance la discussion.</p>
-              </div>
-            )}
-          </div>
-        </section>
-      </section>
+                    ) : null}
+                  </div>
 
-      <aside className="grid gap-4">
-        <section className="forum-card-quiet p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--accent-secondary)]">
-            Live
-          </p>
-          <p className="mt-3 text-lg font-semibold">
-            {comments.length} réponse{comments.length > 1 ? "s" : ""}
-          </p>
-        </section>
-        <section className="forum-card-quiet p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--accent-secondary)]">
-            Contrôle
-          </p>
-          <p className="mt-3 text-lg font-semibold">Auteur seulement</p>
-        </section>
-      </aside>
+                  {isEditing ? (
+                    <div className="mt-4 grid gap-3">
+                      <textarea
+                        className="forum-textarea min-h-28"
+                        value={editingCommentDraft}
+                        onChange={(event) => {
+                          setEditingCommentDraft(event.target.value);
+                        }}
+                      />
+                      <div className="forum-toolbar">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleSaveEditedComment(comment.id);
+                          }}
+                          disabled={busyAction === `comment:update:${comment.id}`}
+                          className="forum-button-primary"
+                        >
+                          {busyAction === `comment:update:${comment.id}`
+                            ? "Enregistrement…"
+                            : "Enregistrer"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCommentId(null);
+                            setEditingCommentDraft("");
+                          }}
+                          className="forum-button-ghost"
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="forum-richtext mt-4">{comment.content}</div>
+                  )}
+                </article>
+              );
+            })
+          ) : (
+            <div className="forum-card-quiet px-6 py-10 text-center">
+              <h3 className="forum-title text-2xl font-semibold sm:text-3xl">
+                Aucune réponse
+              </h3>
+              <p className="forum-muted mt-3 text-sm">Lance la discussion.</p>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
