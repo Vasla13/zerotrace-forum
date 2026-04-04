@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "firebase:setup": "node scripts/firebase-setup.mjs",
     "firebase:deploy": "firebase deploy --only firestore:rules,firestore:indexes",
+    "firebase:deploy:hosting": "firebase deploy --only hosting",
     "firebase:deploy:app": "firebase deploy --only apphosting:zerotrace",
     "firebase:deploy:full": "firebase deploy"
   },

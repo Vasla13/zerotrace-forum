@@ -97,9 +97,10 @@ npm run firebase:deploy
 
 ## Site en ligne
 
-Le site est publié sur Firebase App Hosting :
+Le site est accessible sur :
 
-`https://zerotrace--forum-20260404.europe-west4.hosted.app`
+- `https://zerotrace-forum.web.app`
+- `https://zerotrace--forum-20260404.europe-west4.hosted.app`
 
 ## Déploiement App Hosting
 
@@ -113,20 +114,17 @@ Pour republier l'application web :
 npm run firebase:deploy:app
 ```
 
+Pour republier l'URL courte Firebase Hosting :
+
+```bash
+npm run firebase:deploy:hosting
+```
+
 Pour tout redéployer :
 
 ```bash
 npm run firebase:deploy:full
 ```
-
-## Étape Firebase restante
-
-Le projet Firebase et Firestore ont été créés automatiquement, mais l’activation du provider `Email/Password` dans Firebase Authentication n’a pas pu être automatisée proprement sans passer par l’interface Google.
-
-À faire une fois dans la console Firebase :
-
-1. Ouvrir `https://console.firebase.google.com/project/forum-20260404/authentication/providers`
-2. Activer `Email/Password`
 
 ## Commandes utiles
 
@@ -136,6 +134,7 @@ npm run build
 npm run lint
 npm run firebase:setup -- --projectId forum-20260404
 npm run firebase:deploy
+npm run firebase:deploy:hosting
 npm run firebase:deploy:app
 npm run firebase:deploy:full
 ```

@@ -12,6 +12,24 @@
       ]
     }
   ],
+  "hosting": {
+    "site": "zerotrace-forum",
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "zerotrace",
+          "region": "europe-west4"
+        }
+      }
+    ]
+  },
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
