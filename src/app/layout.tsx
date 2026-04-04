@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Oxanium, Space_Grotesk } from "next/font/google";
 import { Header } from "@/components/header";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { AppProviders } from "@/providers/app-providers";
 import "./globals.css";
 
@@ -37,9 +38,10 @@ export default function RootLayout({
         <AppProviders>
           <div className="relative flex min-h-screen flex-col">
             <Header />
-            <main className="mx-auto flex w-full max-w-7xl flex-1 px-4 pb-12 pt-6 sm:px-6 lg:px-8">
+            <main className="mx-auto flex w-full max-w-7xl flex-1 px-4 pb-28 pt-6 sm:px-6 md:pb-12 lg:px-8">
               {children}
             </main>
+            <MobileBottomNav />
           </div>
         </AppProviders>
       </body>

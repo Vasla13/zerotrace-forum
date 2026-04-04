@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useDeferredValue, useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   MessageSquareText,
@@ -21,6 +21,7 @@ import { useAuth } from "@/providers/auth-provider";
 
 export function ForumHome() {
   const { configured, profile, user } = useAuth();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchInput, setSearchInput] = useState("");
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [cursor, setCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(
@@ -80,6 +81,31 @@ export function ForumHome() {
     };
   }, [configured, deferredSearch]);
 
+  useEffect(() => {
+    const focusSearch = () => {
+      if (window.location.hash !== "#feed-search") {
+        return;
+      }
+
+      const element = searchInputRef.current;
+      if (!element) {
+        return;
+      }
+
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+      window.setTimeout(() => {
+        element.focus();
+      }, 120);
+    };
+
+    focusSearch();
+    window.addEventListener("hashchange", focusSearch);
+
+    return () => {
+      window.removeEventListener("hashchange", focusSearch);
+    };
+  }, []);
+
   async function handleLoadMore() {
     if (!cursor) {
       return;
@@ -135,6 +161,8 @@ export function ForumHome() {
 
           <div className="mt-6 max-w-2xl">
             <InputShell
+              id="feed-search"
+              ref={searchInputRef}
               icon={Search}
               placeholder="Recherche directe…"
               type="search"
