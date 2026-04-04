@@ -1,4 +1,4 @@
-# Forum Moderne
+# ZeroTrace
 
 Forum web complet construit avec `Next.js`, `TypeScript`, `Firebase Auth` et `Cloud Firestore`.
 
@@ -94,6 +94,14 @@ Avant d’utiliser la base distante, pousse les règles et index :
 ```bash
 npm run firebase:deploy
 ```
+
+## Hébergement Firebase du site
+
+Le code du forum est prêt pour un déploiement web, mais le projet Firebase `forum-20260404` est actuellement en `freeTier`.
+
+Le déploiement du site via `Firebase App Hosting` est donc bloqué tant que le projet n’est pas passé au plan `Blaze`.
+
+Une fois le projet mis à niveau dans la console Firebase, le site pourra être branché sur App Hosting.
 
 ## Étape Firebase restante
 
