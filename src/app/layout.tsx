@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Oxanium, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
+import { Space_Grotesk } from "next/font/google";
 import { Header } from "@/components/header";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { AppProviders } from "@/providers/app-providers";
@@ -10,18 +11,24 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
 });
 
-const oxanium = Oxanium({
-  variable: "--font-oxanium",
-  subsets: ["latin"],
+const cyberBrush = localFont({
+  src: "./fonts/CyberBrush.ttf",
+  variable: "--font-cyber-brush",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "ZeroTrace",
-    template: "%s | ZeroTrace",
+    default: "NEST",
+    template: "%s | NEST",
   },
   description:
-    "Forum cyber avec Firebase Auth, Firestore, posts, commentaires, likes et profils utilisateurs.",
+    "Réseau clandestin anti-corporation inspiré du Net de Cyberpunk 2077, avec accès par code, posts, commentaires, likes et profils nœuds.",
+  icons: {
+    icon: "/nest-logo.png",
+    shortcut: "/nest-logo.png",
+    apple: "/nest-logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -30,15 +37,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="fr"
-      className={`${spaceGrotesk.variable} ${oxanium.variable}`}
-    >
+    <html lang="fr" className={`${spaceGrotesk.variable} ${cyberBrush.variable}`}>
       <body className="min-h-screen antialiased">
         <AppProviders>
           <div className="relative flex min-h-screen flex-col">
+            <div aria-hidden="true" className="forum-background" />
             <Header />
-            <main className="mx-auto flex w-full max-w-7xl flex-1 px-4 pb-28 pt-6 sm:px-6 md:pb-12 lg:px-8">
+            <main className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 px-4 pb-28 pt-6 sm:px-6 md:pb-12 lg:px-8">
               {children}
             </main>
             <MobileBottomNav />

@@ -170,29 +170,27 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
           <div>
             <span className="forum-pill">
               <PenLine className="h-3.5 w-3.5" />
-              {mode === "create" ? "Nouveau sujet" : "Édition"}
+              {mode === "create" ? "Rédaction" : "Édition"}
             </span>
-            <h1 className="forum-title mt-5 text-4xl font-semibold sm:text-5xl">
-              {mode === "create" ? "Lancer un sujet" : "Ajuster le signal"}
+            <h1 className="forum-title mt-5 text-4xl sm:text-5xl">
+              {mode === "create" ? "Nouveau post" : "Modifier le post"}
             </h1>
           </div>
           <span className="forum-inline-note">
-            {mode === "create" ? "publication directe" : "mise à jour live"}
+            forum // 2035
           </span>
         </div>
 
-        <div className="forum-toolbar mt-5">
-          <span className="forum-stat-chip">
-            <strong>120</strong>
-            titre max
-          </span>
-          <span className="forum-stat-chip">
-            <strong>5000</strong>
-            contenu max
-          </span>
-          <span className="forum-stat-chip">
+        <div className="forum-meta-line mt-5">
+          <strong>120</strong>
+          <span>titre max</span>
+          <span className="forum-meta-dot" />
+          <strong>5000</strong>
+          <span>contenu max</span>
+          <span className="forum-meta-dot" />
+          <span className="inline-flex items-center gap-2">
             <ShieldCheck className="h-3.5 w-3.5 text-[color:var(--accent-secondary)]" />
-            auteur only
+            post public
           </span>
         </div>
 
@@ -205,7 +203,7 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
             <input
               {...register("title")}
               className="forum-input"
-              placeholder="Exemple : Comment structurer un projet Next.js + Firebase ?"
+              placeholder="Exemple : Nouveau patch Biotechnica"
             />
             {errors.title ? (
               <span className="text-xs text-[color:var(--danger)]">
@@ -222,7 +220,7 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
             <textarea
               {...register("content")}
               className="forum-textarea min-h-72"
-              placeholder="Contexte, problème, résultat attendu."
+              placeholder="Écris ton message."
             />
             {errors.content ? (
               <span className="text-xs text-[color:var(--danger)]">
@@ -235,7 +233,7 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
 
           <div className="forum-toolbar justify-between">
             <span className="forum-muted text-sm">
-              Clair, court, utile.
+              Simple et lisible.
             </span>
             <div className="forum-toolbar">
               <Link

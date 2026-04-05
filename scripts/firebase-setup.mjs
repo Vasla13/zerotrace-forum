@@ -34,7 +34,7 @@ function parseArgs(argv) {
 
 const args = parseArgs(process.argv.slice(2));
 const projectId = args.projectId ?? "forum-20260404";
-const appName = args.appName ?? "forum-web";
+const appName = args.appName ?? "nest-web";
 
 const listedApps = JSON.parse(
   runFirebaseCommand(["--project", projectId, "apps:list", "WEB", "--json"]),

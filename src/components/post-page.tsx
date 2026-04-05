@@ -3,13 +3,7 @@
 import Link from "next/link";
 import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  CalendarDays,
-  Heart,
-  MessageSquareMore,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { Heart, MessageSquareMore, Pencil, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import {
@@ -21,7 +15,11 @@ import {
 import { subscribeToLikeState, togglePostLike } from "@/lib/data/likes";
 import { deleteForumPost, subscribeToPost } from "@/lib/data/posts";
 import type { ForumComment, ForumPost, LikeState } from "@/lib/types/forum";
-import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
+import {
+  formatAbsoluteDate,
+  formatRelativeDate,
+  formatSystemDate,
+} from "@/lib/utils/date";
 import { getErrorMessage } from "@/lib/utils/errors";
 import { commentSchema } from "@/lib/validation/forum";
 import { useAuth } from "@/providers/auth-provider";
@@ -261,16 +259,22 @@ export function PostPage({ postId }: PostPageProps) {
             <div className="min-w-0">
               <Link
                 href={`/profile/${post.author.usernameLower}`}
-                className="block truncate text-sm font-semibold hover:text-[color:var(--accent-dark)]"
+                className="block truncate text-sm font-semibold uppercase tracking-[0.14em] hover:text-[color:var(--accent-dark)]"
               >
                 {post.author.username}
               </Link>
-              <div className="forum-muted mt-1 flex flex-wrap items-center gap-2 text-xs">
-                <CalendarDays className="h-3.5 w-3.5" />
+              <div className="forum-meta-line mt-1 text-xs">
                 <span title={formatAbsoluteDate(post.createdAt)}>
                   {formatRelativeDate(post.createdAt)}
                 </span>
-                {wasEdited ? <span>· modifié</span> : null}
+                <span className="forum-meta-dot" />
+                <span>{formatSystemDate(post.createdAt)}</span>
+                {wasEdited ? (
+                  <>
+                    <span className="forum-meta-dot" />
+                    <span>modifié</span>
+                  </>
+                ) : null}
               </div>
             </div>
           </div>
@@ -313,17 +317,14 @@ export function PostPage({ postId }: PostPageProps) {
             />
             {likeState.count}
           </button>
-          <span className="forum-stat-chip">
+          <div className="forum-meta-line">
             <MessageSquareMore className="h-3.5 w-3.5 text-[color:var(--accent)]" />
             <strong>{comments.length}</strong>
-            réponse{comments.length > 1 ? "s" : ""}
-          </span>
-          <span className="forum-inline-note" title={formatAbsoluteDate(post.createdAt)}>
-            {formatAbsoluteDate(post.createdAt)}
-          </span>
+            <span>réponse{comments.length > 1 ? "s" : ""}</span>
+          </div>
         </div>
 
-        <h1 className="forum-title mt-6 text-4xl font-semibold leading-tight sm:text-5xl">
+        <h1 className="forum-title mt-6 text-4xl leading-tight sm:text-5xl">
           {post.title}
         </h1>
 
@@ -335,19 +336,21 @@ export function PostPage({ postId }: PostPageProps) {
       <section className="forum-card p-6 sm:p-8">
         <div className="forum-section-head">
           <div>
-            <span className="forum-pill">Réponses</span>
-            <h2 className="forum-title mt-4 text-3xl font-semibold sm:text-4xl">
-              Thread
+            <h2 className="forum-title mt-4 text-3xl sm:text-4xl">
+              Réponses
             </h2>
+            <div className="forum-meta-line mt-3">
+              <span>{comments.length} réponse(s)</span>
+            </div>
           </div>
-          <span className="forum-inline-note">{comments.length} actif(s)</span>
+          <div className="forum-muted text-sm">ouvert</div>
         </div>
 
         {user ? (
           <div className="forum-card-quiet mt-6 p-4 sm:p-5">
             <textarea
               className="forum-textarea min-h-32"
-              placeholder="Réponds sans détour…"
+              placeholder="Écris une réponse."
               value={commentDraft}
               onChange={(event) => {
                 setCommentDraft(event.target.value);
@@ -374,7 +377,7 @@ export function PostPage({ postId }: PostPageProps) {
               href={`/login?next=${encodeURIComponent(`/posts/${postId}`)}`}
               className="forum-button-ghost"
             >
-              Entrer
+              Connexion
             </Link>
           </div>
         )}
@@ -400,7 +403,7 @@ export function PostPage({ postId }: PostPageProps) {
                       <div className="min-w-0">
                         <Link
                           href={`/profile/${comment.author.usernameLower}`}
-                          className="block truncate text-sm font-semibold hover:text-[color:var(--accent-dark)]"
+                          className="block truncate text-sm font-semibold uppercase tracking-[0.14em] hover:text-[color:var(--accent-dark)]"
                         >
                           {comment.author.username}
                         </Link>
@@ -485,10 +488,10 @@ export function PostPage({ postId }: PostPageProps) {
             })
           ) : (
             <div className="forum-card-quiet px-6 py-10 text-center">
-              <h3 className="forum-title text-2xl font-semibold sm:text-3xl">
+              <h3 className="forum-title text-2xl sm:text-3xl">
                 Aucune réponse
               </h3>
-              <p className="forum-muted mt-3 text-sm">Lance la discussion.</p>
+              <p className="forum-muted mt-3 text-sm">Ce post attend sa première réponse.</p>
             </div>
           )}
         </div>

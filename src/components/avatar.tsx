@@ -28,7 +28,7 @@ export function Avatar({
     <div
       aria-hidden="true"
       className={clsx(
-        "flex shrink-0 items-center justify-center rounded-full font-semibold text-white shadow-lg",
+        "forum-avatar flex shrink-0 items-center justify-center font-semibold text-white shadow-lg",
         sizeMap[size],
         className,
       )}

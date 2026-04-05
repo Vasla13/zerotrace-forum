@@ -1,5 +1,5 @@
 {
-  "name": "forum",
+  "name": "nest",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "access:codes": "node scripts/generate-access-codes.mjs",
     "firebase:setup": "node scripts/firebase-setup.mjs",
     "firebase:deploy": "firebase deploy --only firestore:rules,firestore:indexes",
     "firebase:deploy:hosting": "firebase deploy --only hosting",

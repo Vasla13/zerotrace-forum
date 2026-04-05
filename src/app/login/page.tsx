@@ -1,7 +1,7 @@
 import { AuthForm } from "@/components/auth-form";
 
 export const metadata = {
-  title: "Connexion",
+  title: "Passerelle",
 };
 
 export default function LoginPage() {

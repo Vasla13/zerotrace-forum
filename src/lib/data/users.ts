@@ -16,11 +16,17 @@ import {
   where,
   type DocumentData,
   type DocumentSnapshot,
+  type Transaction,
 } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase/client";
 import type { ForumUserProfile } from "@/lib/types/forum";
-import type { LoginFormValues, RegisterFormValues } from "@/lib/validation/auth";
-import { loginSchema, registerSchema } from "@/lib/validation/auth";
+import type { AccessAuthValues } from "@/lib/validation/auth";
+import { accessAuthSchema } from "@/lib/validation/auth";
+import {
+  buildAccessCodeIdentity,
+  isAccessCodeProvisioned,
+} from "@/lib/utils/access-code";
+import { generateNodeAlias } from "@/lib/utils/alias";
 import { normalizeUsername } from "@/lib/utils/text";
 
 function toDate(value: unknown) {
@@ -54,89 +60,168 @@ function mapUserProfile(
   };
 }
 
-function buildInternalAuthEmail(usernameLower: string) {
-  const uniqueSuffix =
-    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-
-  return `${usernameLower}--${uniqueSuffix}@auth.zerotrace.local`;
-}
-
-export async function registerForumUser(values: RegisterFormValues) {
-  const parsed = registerSchema.parse(values);
-  const auth = getFirebaseAuth();
-  const db = getFirebaseDb();
-  const username = parsed.username.trim();
+async function reserveUsername(
+  transaction: Transaction,
+  uid: string,
+  requestedUsername: string,
+) {
+  const username = requestedUsername.trim();
   const usernameLower = normalizeUsername(username);
-  const usernameRef = doc(db, "usernames", usernameLower);
-  const existingUsername = await getDoc(usernameRef);
+  const usernameRef = doc(getFirebaseDb(), "usernames", usernameLower);
+  const usernameSnapshot = await transaction.get(usernameRef);
 
-  if (existingUsername.exists()) {
+  if (usernameSnapshot.exists()) {
     throw new Error("Ce pseudo est déjà utilisé.");
   }
 
-  const email = buildInternalAuthEmail(usernameLower);
+  transaction.set(usernameRef, {
+    uid,
+    username,
+    usernameLower,
+    createdAt: serverTimestamp(),
+  });
+
+  return {
+    username,
+    usernameLower,
+  };
+}
+
+function isSignInFallbackError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error.code === "auth/user-not-found" ||
+      error.code === "auth/invalid-credential" ||
+      error.code === "auth/email-already-in-use")
+  );
+}
+
+async function createProfileForAccessCode(
+  uid: string,
+  email: string,
+  requestedUsername: string,
+) {
+  const auth = getFirebaseAuth();
+  const db = getFirebaseDb();
+  const usernameCandidates = requestedUsername
+    ? [requestedUsername]
+    : Array.from(
+        { length: 12 },
+        (_, index) => generateNodeAlias(`${uid}:${email}:${index}`),
+      );
+
+  const username = await runTransaction(db, async (transaction) => {
+    const userRef = doc(db, "users", uid);
+    const userSnapshot = await transaction.get(userRef);
+
+    if (userSnapshot.exists()) {
+      return {
+        username: String(userSnapshot.data().username),
+        usernameLower: String(userSnapshot.data().usernameLower),
+      };
+    }
+
+    for (const candidate of usernameCandidates) {
+      try {
+        const reserved = await reserveUsername(transaction, uid, candidate);
+
+        transaction.set(userRef, {
+          uid,
+          username: reserved.username,
+          usernameLower: reserved.usernameLower,
+          email,
+          createdAt: serverTimestamp(),
+        });
+
+        return reserved;
+      } catch (error) {
+        if (requestedUsername) {
+          throw error;
+        }
+      }
+    }
+
+    throw new Error("Impossible de provisionner un pseudo disponible.");
+  });
+
+  if (auth.currentUser) {
+    await updateProfile(auth.currentUser, {
+      displayName: username.username,
+    }).catch(() => undefined);
+  }
+
+  return username.username;
+}
+
+export async function authenticateWithAccessCode(values: AccessAuthValues) {
+  const parsed = accessAuthSchema.parse(values);
+  const identity = await buildAccessCodeIdentity(parsed.accessCode);
+
+  if (!isAccessCodeProvisioned(identity.hash)) {
+    throw new Error("Code d’accès invalide, révoqué ou non provisionné.");
+  }
+
+  const auth = getFirebaseAuth();
+
+  try {
+    const credential = await signInWithEmailAndPassword(
+      auth,
+      identity.email,
+      identity.password,
+    );
+
+    return {
+      created: false,
+      username: credential.user.displayName || null,
+    };
+  } catch (error) {
+    if (!isSignInFallbackError(error)) {
+      throw error;
+    }
+  }
 
   const credential = await createUserWithEmailAndPassword(
     auth,
-    email,
-    parsed.password,
-  );
+    identity.email,
+    identity.password,
+  ).catch(async (error) => {
+    if (!isSignInFallbackError(error)) {
+      throw error;
+    }
+
+    return signInWithEmailAndPassword(auth, identity.email, identity.password);
+  });
+
+  if (!credential.user) {
+    throw new Error("Impossible d’ouvrir la session réseau.");
+  }
 
   try {
-    await runTransaction(db, async (transaction) => {
-      const userRef = doc(db, "users", credential.user.uid);
+    const username = await createProfileForAccessCode(
+      credential.user.uid,
+      identity.email,
+      parsed.username,
+    );
 
-      const userSnapshot = await transaction.get(userRef);
-      const usernameSnapshot = await transaction.get(usernameRef);
-
-      if (userSnapshot.exists()) {
-        throw new Error("Ce compte existe déjà.");
-      }
-
-      if (usernameSnapshot.exists()) {
-        throw new Error("Ce pseudo est déjà utilisé.");
-      }
-
-      transaction.set(userRef, {
-        uid: credential.user.uid,
-        username,
-        usernameLower,
-        email,
-        createdAt: serverTimestamp(),
-      });
-
-      transaction.set(usernameRef, {
-        uid: credential.user.uid,
-        username,
-        usernameLower,
-        createdAt: serverTimestamp(),
-      });
-    });
-
-    await updateProfile(credential.user, {
-      displayName: username,
-    });
+    return {
+      created: true,
+      username,
+    };
   } catch (error) {
+    const profileSnapshot = await getDoc(doc(getFirebaseDb(), "users", credential.user.uid));
+
+    if (profileSnapshot.exists()) {
+      return {
+        created: false,
+        username: String(profileSnapshot.data().username),
+      };
+    }
+
     await credential.user.delete().catch(() => undefined);
     throw error;
   }
-}
-
-export async function signInForumUser(values: LoginFormValues) {
-  const parsed = loginSchema.parse(values);
-  const profile = await getUserProfileByUsername(parsed.username);
-
-  if (!profile) {
-    throw new Error("Pseudo ou mot de passe invalide.");
-  }
-
-  return signInWithEmailAndPassword(
-    getFirebaseAuth(),
-    profile.email.trim().toLowerCase(),
-    parsed.password,
-  );
 }
 
 export async function signOutForumUser() {

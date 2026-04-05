@@ -1,12 +1,12 @@
-# ZeroTrace
+# NEST
 
-Forum web complet construit avec `Next.js`, `TypeScript`, `Firebase Auth` et `Cloud Firestore`.
+Réseau/forum clandestin construit avec `Next.js`, `TypeScript`, `Firebase Auth` et `Cloud Firestore`.
 
 Le projet Firebase dédié a été créé le `4 avril 2026` avec :
 
-- nom affiché : `forum`
+- nom affiché : `nest`
 - project ID : `forum-20260404`
-- web app : `forum-web`
+- web app : `nest-web`
 
 ## Stack
 
@@ -18,8 +18,9 @@ Le projet Firebase dédié a été créé le `4 avril 2026` avec :
 
 ## Fonctionnalités
 
-- inscription avec pseudo, email et mot de passe
-- connexion / déconnexion
+- accès immersif avec intro terminal et passerelle réseau
+- authentification par `code d’accès` à usage unique logique
+- pseudo optionnel avec génération d’alias cyberpunk
 - session persistée via Firebase Auth
 - profil public avec pseudo, date d’inscription et nombre de posts
 - création, modification et suppression de ses propres posts
@@ -30,11 +31,12 @@ Le projet Firebase dédié a été créé le `4 avril 2026` avec :
 - recherche simple par mots-clés
 - pagination via chargement progressif
 - avatar par défaut généré depuis le pseudo
+- thème cyberpunk vert néon, scanlines, bruit visuel et ambiance anti-corpo
 
 ## Arborescence
 
 ```text
-forum/
+nest/
 ├─ src/
 │  ├─ app/
 │  │  ├─ login/
@@ -139,9 +141,19 @@ npm run firebase:deploy:app
 npm run firebase:deploy:full
 ```
 
+## Gestion des codes d’accès
+
+Pour générer de nouveaux codes d’accès et injecter leurs hashes dans le projet :
+
+```bash
+npm run access:codes -- --count 5
+```
+
+Le script affiche les codes en clair dans le terminal et met à jour `src/lib/generated/access-codes.ts`.
+
 ## Notes techniques
 
-- Les mots de passe sont hashés et gérés par Firebase Auth.
+- Les identités sont mappées sur des comptes Firebase cachés dérivés du code d’accès.
 - Les règles Firestore limitent la modification et la suppression au propriétaire du contenu.
 - Le rendu des posts et commentaires est en texte brut, sans HTML injecté.
 - La recherche s’appuie sur un index de mots-clés généré au moment de la création / édition des posts.

@@ -30,7 +30,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         <section className="forum-card w-full p-8 text-center">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-[color:var(--line)] border-t-[color:var(--accent)]" />
           <p className="forum-muted mt-5 text-sm">
-            Vérification de ta session…
+            Vérification…
           </p>
         </section>
       </div>

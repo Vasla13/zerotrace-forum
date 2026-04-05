@@ -38,13 +38,13 @@ export function MobileBottomNav() {
     {
       href: "/",
       icon: House,
-      label: "Flux",
+      label: "Forum",
       active: pathname === "/" && hash !== "#feed-search",
     },
     {
       href: "/#feed-search",
       icon: Search,
-      label: "Recherche",
+      label: "Chercher",
       active: pathname === "/" && hash === "#feed-search",
     },
     {
@@ -75,7 +75,7 @@ export function MobileBottomNav() {
         {navItems.slice(0, 2).map((item) => {
           const Icon = item.icon;
 
-          if (item.label === "Recherche") {
+          if (item.href === "/#feed-search") {
             return (
               <button
                 key={item.label}
@@ -110,8 +110,8 @@ export function MobileBottomNav() {
         <Link
           href={user ? "/posts/new" : "/register"}
           className="forum-mobile-dock-post"
-          aria-label={user ? "Créer un post" : "Créer un compte"}
-          title={user ? "Poster" : "Entrer"}
+          aria-label={user ? "Nouveau post" : "Entrer"}
+          title={user ? "Publier" : "Entrer"}
         >
           <Plus className="h-5 w-5" />
         </Link>

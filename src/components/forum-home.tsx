@@ -7,9 +7,11 @@ import {
   MessageSquareText,
   Plus,
   Search,
+  Shield,
   Sparkles,
   X,
 } from "lucide-react";
+import { AccessGatewayPanel } from "@/components/access-gateway-panel";
 import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { InputShell } from "@/components/input-shell";
@@ -18,6 +20,14 @@ import { fetchFeedPage } from "@/lib/data/posts";
 import { type ForumPost } from "@/lib/types/forum";
 import { getErrorMessage } from "@/lib/utils/errors";
 import { useAuth } from "@/providers/auth-provider";
+
+const manifestoLines = [
+  "Fuites, preuves et dossiers.",
+  "Interface simple. Lecture rapide.",
+  "Publie peu. Publie juste.",
+] as const;
+
+const relayTags = ["net", "threads", "preuves", "nœuds"] as const;
 
 export function ForumHome() {
   const { configured, profile, user } = useAuth();
@@ -137,133 +147,175 @@ export function ForumHome() {
 
   return (
     <div className="forum-grid w-full">
-      <section className="forum-card grid gap-6 overflow-hidden p-6 sm:p-8 lg:grid-cols-[1.12fr_0.88fr]">
-        <div className="flex flex-col justify-between">
-          <div>
-            <div className="forum-toolbar">
-              <span className="forum-pill">
-                <Sparkles className="h-3.5 w-3.5" />
-                ZeroTrace
-              </span>
-              <span className="forum-stat-chip">
-                <MessageSquareText className="h-3.5 w-3.5 text-[color:var(--accent)]" />
+      <section className="forum-card forum-hero-panel overflow-hidden p-6 sm:p-8">
+        <div
+          className={`forum-hero-grid ${
+            user ? "lg:grid-cols-[1.02fr_0.98fr]" : "lg:grid-cols-[1.08fr_0.92fr]"
+          }`}
+        >
+          <div className="flex flex-col justify-between">
+            <div>
+              <div className="forum-toolbar">
+                <span className="forum-pill">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  NEST
+                </span>
+              </div>
+              <h1 className="forum-title mt-5 max-w-3xl text-4xl leading-none sm:text-5xl lg:text-6xl">
+                NEST // NET
+              </h1>
+              <p className="forum-brief-copy mt-4">
+                Forum cyberpunk pour posts, preuves et discussions. Interface
+                directe. Lecture rapide.
+              </p>
+              <div className="forum-meta-line mt-5">
                 <strong>{posts.length}</strong>
-                {isSearching ? "match" : "live"}
-              </span>
+                <span>{isSearching ? resultLabel : "posts visibles"}</span>
+                <span className="forum-meta-dot" />
+                <span>cycle 2035</span>
+                <span className="forum-meta-dot" />
+                <span>
+                  {profile
+                    ? `connecté : ${profile.username}`
+                    : "lecture publique"}
+                </span>
+              </div>
             </div>
-            <h1 className="forum-title mt-5 max-w-3xl text-4xl font-semibold leading-none sm:text-5xl lg:text-6xl">
-              Trouve le bon thread. Coupe le bruit.
-            </h1>
-            <p className="forum-muted mt-4 max-w-xl text-sm">
-              Publie vite. Réponds net. Reste sur l’essentiel.
-            </p>
-          </div>
 
-          <div className="mt-6 max-w-2xl">
-            <InputShell
-              id="feed-search"
-              ref={searchInputRef}
-              icon={Search}
-              placeholder="Recherche directe…"
-              type="search"
-              value={searchInput}
-              onChange={(event) => {
-                setSearchInput(event.target.value);
-              }}
-            />
-          </div>
-
-          <div className="forum-toolbar mt-4">
-            {user ? (
-              <Link href="/posts/new" className="forum-button-primary">
-                <Plus className="mr-2 h-4 w-4" />
-                Poster
-              </Link>
-            ) : (
-              <>
-                <Link href="/register" className="forum-button-primary">
-                  Entrer
-                </Link>
-                <Link href="/login" className="forum-button-ghost">
-                  Connexion
-                </Link>
-              </>
-            )}
-            {searchInput ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchInput("");
+            <div className="mt-6 max-w-2xl">
+              <InputShell
+                id="feed-search"
+                ref={searchInputRef}
+                icon={Search}
+                placeholder="Rechercher un post, un sujet, un pseudo…"
+                type="search"
+                value={searchInput}
+                onChange={(event) => {
+                  setSearchInput(event.target.value);
                 }}
-                className="forum-button-ghost"
-              >
-                <X className="mr-2 h-4 w-4" />
-                Effacer
-              </button>
-            ) : null}
+              />
+            </div>
+
+            <div className="forum-toolbar mt-4">
+              {user ? (
+                <Link href="/posts/new" className="forum-button-primary">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nouveau post
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login" className="forum-button-primary">
+                    Connexion
+                  </Link>
+                  <Link href="/#feed-search" className="forum-button-ghost">
+                    Explorer
+                  </Link>
+                </>
+              )}
+              {searchInput ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchInput("");
+                  }}
+                  className="forum-button-ghost"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Effacer
+                </button>
+              ) : null}
+            </div>
           </div>
+
+          {user ? (
+            <div className="forum-hero-visual">
+              <div className="forum-toolbar justify-between gap-3">
+                <span className="forum-inline-note">interface // cyberpunk 2035</span>
+                <span className="forum-pill">
+                  <Shield className="h-3.5 w-3.5" />
+                  online
+                </span>
+              </div>
+              <div className="forum-meta-line">
+                <span>forum</span>
+                <span className="forum-meta-dot" />
+                <span>public</span>
+                <span className="forum-meta-dot" />
+                <span>2035</span>
+              </div>
+              <h2 className="forum-title text-3xl leading-none sm:text-4xl">
+                Forum simple. Signal clair.
+              </h2>
+              <p className="forum-muted max-w-lg text-sm leading-7">
+                Pensé pour lire vite, publier vite et garder le focus sur le
+                contenu.
+              </p>
+              <div className="forum-hero-tags">
+                {relayTags.map((tag) => (
+                  <span key={tag} className="forum-hero-tag">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div className="forum-divider" />
+              <div className="forum-meta-line">
+                <span>session</span>
+                <span className="forum-meta-dot" />
+                <strong>{profile?.username}</strong>
+                <span className="forum-meta-dot" />
+                <span>{isSearching ? "recherche active" : "forum actif"}</span>
+              </div>
+            </div>
+          ) : (
+            <AccessGatewayPanel targetAfterAuth="/" className="h-full" />
+          )}
         </div>
 
-        <div className="forum-signal-panel">
-          <div className="forum-inline-note">signal mesh</div>
-          <div className="mt-4 forum-signal-grid">
-            {Array.from({ length: 12 }).map((_, index) => {
-              const isActive = [0, 1, 4, 7, 8, 10].includes(index);
-              const isSecondary = [5, 11].includes(index);
-
-              return (
-                <span
-                  key={index}
-                  className={[
-                    "forum-signal-cell",
-                    isActive ? "forum-signal-cell-active" : "",
-                    isSecondary ? "forum-signal-cell-secondary" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                />
-              );
-            })}
-          </div>
-          <div className="forum-divider mt-5" />
-          <div className="mt-5 grid gap-2 sm:grid-cols-3">
-            <div className="forum-stat-chip justify-between">
-              <span>Flux</span>
-              <strong>ouvert</strong>
+        {user ? (
+          <div className="forum-manifest">
+            <div>
+              <div className="forum-inline-note">mode // 2035</div>
+              <p className="forum-title mt-3 text-2xl leading-none sm:text-3xl">
+                Simple. Lisible. Direct.
+              </p>
             </div>
-            <div className="forum-stat-chip justify-between">
-              <span>Mode</span>
-              <strong>posts</strong>
-            </div>
-            <div className="forum-stat-chip justify-between">
-              <span>Recherche</span>
-              <strong>{isSearching ? "active" : "idle"}</strong>
+            <div className="forum-manifest-list">
+              {manifestoLines.map((line, index) => (
+                <div key={line} className="forum-manifest-row">
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <p>{line}</p>
+                </div>
+              ))}
+              <div className="forum-manifest-row">
+                <span>04</span>
+                <p>
+                  {isSearching
+                    ? "Recherche active."
+                    : "Lis vite. Poste utile."}
+                </p>
+              </div>
             </div>
           </div>
-          <div className="mt-5 text-sm text-[color:var(--foreground)]">
-            {profile ? `Connecté : ${profile.username}` : "Lecture publique immédiate"}
-          </div>
-          <p className="forum-muted mt-2 text-sm">
-            Le cœur du forum reste visible sans surcharge.
-          </p>
-        </div>
+        ) : null}
       </section>
 
-      <section className="forum-card p-6 sm:p-7">
+      <section className="forum-card forum-feed-section p-6 sm:p-7">
         <div className="forum-section-head">
           <div>
             <div className="forum-toolbar">
               <span className="forum-pill">
                 <MessageSquareText className="h-3.5 w-3.5" />
-                {isSearching ? "Recherche" : "Flux"}
-              </span>
-              <span className="forum-inline-note">
-                {isSearching ? resultLabel : "plus récent d’abord"}
+                {isSearching ? "Recherche" : "Forum"}
               </span>
             </div>
-            <h2 className="forum-title mt-4 text-3xl font-semibold sm:text-4xl">
+            <h2 className="forum-title mt-4 text-3xl sm:text-4xl">
               {isSearching ? "Résultats" : "Posts récents"}
             </h2>
+            <div className="forum-meta-line mt-3">
+              <span>
+                {isSearching ? resultLabel : "du plus récent au plus ancien"}
+              </span>
+            </div>
           </div>
           <div className="forum-toolbar">
             {isSearching ? (
@@ -279,7 +331,7 @@ export function ForumHome() {
             ) : null}
             {user ? (
               <Link href="/posts/new" className="forum-button-ghost">
-                Écrire
+                Publier
               </Link>
             ) : null}
           </div>
@@ -292,7 +344,7 @@ export function ForumHome() {
         ) : null}
 
         {loading ? (
-          <div className="mt-8 grid gap-4 lg:grid-cols-2">
+          <div className="forum-feed-grid mt-8">
             {Array.from({ length: 4 }).map((_, index) => (
               <div
                 key={index}
@@ -302,7 +354,7 @@ export function ForumHome() {
           </div>
         ) : posts.length ? (
           <>
-            <div className="mt-8 grid gap-4 lg:grid-cols-2">
+            <div className="forum-feed-grid mt-8">
               {posts.map((post) => (
                 <PostCard key={post.id} post={post} />
               ))}
@@ -315,25 +367,27 @@ export function ForumHome() {
                   disabled={loadingMore}
                   className="forum-button-ghost"
                 >
-                  {loadingMore ? "Chargement…" : "Suite"}
+                  {loadingMore ? "Chargement…" : "Voir plus"}
                 </button>
               </div>
             ) : null}
           </>
         ) : (
           <div className="forum-card-quiet mt-8 flex flex-col items-center justify-center px-6 py-10 text-center">
-            <h3 className="forum-title text-2xl font-semibold sm:text-3xl">
+            <h3 className="forum-title text-2xl sm:text-3xl">
               {isSearching ? "Aucun résultat" : "Aucun post"}
             </h3>
             <p className="forum-muted mt-3 max-w-xl text-sm">
-              {isSearching ? "Essaie un autre mot-clé." : "Ouvre le premier sujet."}
+              {isSearching
+                ? "Essaie un autre mot-clé."
+                : "Sois le premier à poster."}
             </p>
             <div className="mt-6">
               <Link
-                href={user ? "/posts/new" : "/register"}
+                href={user ? "/posts/new" : "/login"}
                 className="forum-button-primary"
               >
-                {user ? "Poster" : "Entrer"}
+                {user ? "Publier" : "Entrer"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>

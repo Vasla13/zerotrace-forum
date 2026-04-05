@@ -4,12 +4,12 @@ export function ForumSetupNotice() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 items-center justify-center">
       <section className="forum-card w-full p-8 sm:p-10">
-        <span className="forum-pill">Firebase</span>
+        <span className="forum-pill">Boot sequence</span>
         <h1 className="forum-title mt-5 text-4xl font-semibold">
-          Configuration requise.
+          Liaison Firebase requise.
         </h1>
         <p className="forum-muted mt-4 text-sm">
-          Lance la commande pour générer
+          Génère le fichier de liaison pour ouvrir le réseau :
           <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">
             .env.local
           </code>
@@ -19,7 +19,7 @@ export function ForumSetupNotice() {
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href="/" className="forum-button-secondary">
-            Retour à l’accueil
+            Retour au relais
           </Link>
         </div>
       </section>

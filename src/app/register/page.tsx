@@ -1,7 +1,7 @@
 import { AuthForm } from "@/components/auth-form";
 
 export const metadata = {
-  title: "Inscription",
+  title: "Provision",
 };
 
 export default function RegisterPage() {

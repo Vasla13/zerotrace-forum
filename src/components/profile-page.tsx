@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CalendarDays, FileText, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { PostCard } from "@/components/post-card";
@@ -147,32 +147,24 @@ export function ProfilePage({ username }: ProfilePageProps) {
               className="mt-1"
             />
             <div>
-              <span className="forum-pill">
-                {isCurrentUser ? "Ton profil" : "Profil public"}
-              </span>
-              <h1 className="forum-title mt-4 text-4xl font-semibold sm:text-5xl">
+              <h1 className="forum-title mt-4 text-4xl sm:text-5xl">
                 {profile.username}
               </h1>
-              <p className="forum-muted mt-3 text-sm">
-                Actif depuis {formatJoinedDate(profile.createdAt)}
-              </p>
+              <div className="forum-meta-line mt-3">
+                <span>{isCurrentUser ? "ton profil" : "profil public"}</span>
+                <span className="forum-meta-dot" />
+                <span>actif depuis {formatJoinedDate(profile.createdAt)}</span>
+                <span className="forum-meta-dot" />
+                <strong>{postCount} posts</strong>
+              </div>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <span className="forum-stat-chip">
-              <CalendarDays className="h-3.5 w-3.5 text-[color:var(--accent)]" />
-              <strong>{formatJoinedDate(profile.createdAt)}</strong>
-            </span>
-            <span className="forum-stat-chip">
-              <FileText className="h-3.5 w-3.5 text-[color:var(--accent-secondary)]" />
-              <strong>{postCount}</strong>
-              posts
-            </span>
             {isCurrentUser ? (
               <Link href="/posts/new" className="forum-button-primary">
                 <Plus className="mr-2 h-4 w-4" />
-                Poster
+                Nouveau post
               </Link>
             ) : null}
           </div>
@@ -182,12 +174,16 @@ export function ProfilePage({ username }: ProfilePageProps) {
       <section className="forum-card p-6 sm:p-7">
         <div className="forum-section-head">
           <div>
-            <span className="forum-pill">Flux</span>
-            <h2 className="forum-title mt-4 text-3xl font-semibold sm:text-4xl">
+            <h2 className="forum-title mt-4 text-3xl sm:text-4xl">
               Posts de {profile.username}
             </h2>
+            <div className="forum-meta-line mt-3">
+              <span>12 posts récents</span>
+            </div>
           </div>
-          <span className="forum-inline-note">12 derniers</span>
+          <div className="forum-muted text-sm">
+            {isCurrentUser ? "ton activité" : "activité publique"}
+          </div>
         </div>
 
         {posts.length ? (
@@ -198,10 +194,10 @@ export function ProfilePage({ username }: ProfilePageProps) {
           </div>
         ) : (
           <div className="forum-card-quiet mt-8 px-6 py-10 text-center">
-            <h3 className="forum-title text-2xl font-semibold sm:text-3xl">
+            <h3 className="forum-title text-2xl sm:text-3xl">
               Aucun post
             </h3>
-            <p className="forum-muted mt-3 text-sm">Aucun signal publié.</p>
+            <p className="forum-muted mt-3 text-sm">Aucun post publié.</p>
           </div>
         )}
       </section>

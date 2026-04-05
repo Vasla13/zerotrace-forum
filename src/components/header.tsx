@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { startTransition, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -11,7 +12,7 @@ import { getErrorMessage } from "@/lib/utils/errors";
 import { useAuth } from "@/providers/auth-provider";
 import { toast } from "sonner";
 
-const publicLinks = [{ href: "/", label: "Flux" }];
+const publicLinks = [{ href: "/", label: "Forum" }];
 
 export function Header() {
   const pathname = usePathname();
@@ -35,23 +36,30 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[rgba(71,244,255,0.12)] bg-[rgba(3,7,17,0.76)] shadow-[0_14px_48px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
-      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="group flex items-center gap-3">
-            <div className="forum-brandmark text-sm font-bold text-white transition group-hover:-translate-y-0.5">
-              ZT
+    <header className="sticky top-0 z-40 border-b border-[color:var(--line)] bg-[rgba(0,0,0,0.86)] backdrop-blur-2xl">
+      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="flex min-w-0 items-center gap-4">
+          <Link href="/" className="group flex min-w-0 items-center gap-3">
+            <div className="forum-brandmark transition group-hover:-translate-y-0.5">
+              <Image
+                src="/nest-logo.png"
+                alt="Logo NEST"
+                width={585}
+                height={427}
+                priority
+                className="forum-brandmark-image"
+              />
             </div>
             <div>
-              <div className="forum-title text-xl font-semibold uppercase tracking-[0.14em] sm:text-2xl">
-                ZeroTrace
+              <div className="forum-wordmark text-[2rem] leading-none sm:text-[2.35rem]">
+                NEST
               </div>
-              <div className="forum-muted text-[10px] uppercase tracking-[0.3em]">
-                forum réseau
+              <div className="forum-brand-tagline text-[11px] uppercase tracking-[0.24em]">
+                net forum // 2035
               </div>
             </div>
           </Link>
-          <nav className="hidden items-center gap-2 rounded-full border border-[rgba(118,145,236,0.14)] bg-[rgba(7,12,28,0.52)] p-1 md:flex">
+          <nav className="hidden items-center gap-2 border border-[color:var(--line)] bg-[rgba(0,0,0,0.46)] p-1 md:flex">
             {publicLinks.map((link) => {
               const active =
                 link.href === "/"
@@ -63,10 +71,10 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   className={clsx(
-                    "rounded-full px-4 py-2 text-sm font-medium transition",
+                    "px-4 py-2 text-sm font-medium uppercase tracking-[0.18em] transition",
                     active
-                      ? "border border-[rgba(71,244,255,0.22)] bg-[rgba(71,244,255,0.08)] text-white shadow-sm"
-                      : "text-[color:var(--muted)] hover:bg-[rgba(255,255,255,0.04)] hover:text-[color:var(--foreground)]",
+                      ? "border border-[color:var(--line-strong)] bg-[rgba(0,255,156,0.1)] text-white shadow-sm"
+                      : "text-[color:var(--muted)] hover:bg-[rgba(0,255,156,0.05)] hover:text-[color:var(--foreground)]",
                   )}
                 >
                   {link.label}
@@ -77,11 +85,17 @@ export function Header() {
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="hidden items-center gap-3 border border-[color:var(--line)] bg-[rgba(0,255,156,0.04)] px-3 py-2 text-[11px] uppercase tracking-[0.2em] lg:flex">
+            <span className="text-[color:var(--accent)]">nest</span>
+            <span className="text-[color:var(--foreground)]">
+              access // 2035
+            </span>
+          </div>
           {user ? (
             <>
               <Link href="/posts/new" className="forum-button-primary">
                 <Plus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Nouveau</span>
+                <span className="hidden sm:inline">Nouveau post</span>
               </Link>
               {profile ? (
                 <Link
@@ -94,7 +108,7 @@ export function Header() {
               ) : (
                 <span className="forum-button-ghost">
                   <UserRound className="mr-2 h-4 w-4" />
-                  Profil…
+                  Profil
                 </span>
               )}
               <button
@@ -114,7 +128,7 @@ export function Header() {
                 Connexion
               </Link>
               <Link href="/register" className="forum-button-primary">
-                Accès
+                Entrer
               </Link>
             </>
           )}
