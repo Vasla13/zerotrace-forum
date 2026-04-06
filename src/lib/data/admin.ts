@@ -27,6 +27,23 @@ export async function fetchAdminSession(user: User) {
   return (await response.json()) as AdminSession;
 }
 
+export async function fetchOptionalAdminSession(user: User) {
+  const response = await fetch("/api/admin/session", {
+    headers: await buildAuthorizedHeaders(user),
+    method: "GET",
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response));
+  }
+
+  return (await response.json()) as AdminSession;
+}
+
 export async function fetchAdminUsers(user: User, search = "") {
   const query = search ? `?q=${encodeURIComponent(search)}` : "";
   const response = await fetch(`/api/admin/users${query}`, {

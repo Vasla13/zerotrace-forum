@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 export function Header() {
   const router = useRouter();
-  const { profile, user } = useAuth();
+  const { isAdmin, profile, user } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   async function handleSignOut() {
@@ -54,9 +54,11 @@ export function Header() {
           <div className="forum-header-actions">
             {user ? (
               <>
-                <Link href="/admin" className="forum-button-ghost">
-                  Admin
-                </Link>
+                {isAdmin ? (
+                  <Link href="/admin" className="forum-button-ghost">
+                    Admin
+                  </Link>
+                ) : null}
                 <Link href="/posts/new" className="forum-button-primary">
                   <Plus className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Publier</span>

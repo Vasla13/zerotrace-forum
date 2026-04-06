@@ -4,6 +4,7 @@ import { useDeferredValue, useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 import { Shield, Search, Trash2, UserRound, KeyRound } from "lucide-react";
 import { AuthGuard } from "@/components/auth-guard";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { InputShell } from "@/components/input-shell";
 import {
@@ -27,6 +28,11 @@ import { getErrorMessage } from "@/lib/utils/errors";
 import { useAuth } from "@/providers/auth-provider";
 import { toast } from "sonner";
 
+type AdminDialogState =
+  | { kind: "delete-user"; target: AdminUserSummary }
+  | { kind: "delete-code"; target: AdminAccessCodeSummary }
+  | null;
+
 function AdminPanelInner() {
   const { configured, loading: authLoading, user } = useAuth();
   const [session, setSession] = useState<AdminSession | null>(null);
@@ -40,6 +46,7 @@ function AdminPanelInner() {
   const [loadingCodes, setLoadingCodes] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [dialogState, setDialogState] = useState<AdminDialogState>(null);
 
   const deferredSearch = useDeferredValue(searchInput.trim());
 
@@ -193,20 +200,13 @@ function AdminPanelInner() {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Supprimer le compte ${target.username} et tout son contenu ?`,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
     setBusyAction(`user:delete:${target.uid}`);
 
     try {
       await deleteAdminUser(user, target.uid);
       toast.success(`Compte supprimé : ${target.username}.`);
       await Promise.all([loadUsers(), loadAccessCodes()]);
+      setDialogState(null);
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -263,20 +263,13 @@ function AdminPanelInner() {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Supprimer le code ${accessCode.note || accessCode.fingerprint} ?`,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
     setBusyAction(`code:delete:${accessCode.hash}`);
 
     try {
       await deleteAdminAccessCode(user, accessCode.hash);
       toast.success("Code supprimé.");
       await loadAccessCodes();
+      setDialogState(null);
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -394,7 +387,7 @@ function AdminPanelInner() {
                     <button
                       type="button"
                       onClick={() => {
-                        void handleDeleteUser(target);
+                        setDialogState({ kind: "delete-user", target });
                       }}
                       disabled={busyAction === `user:delete:${target.uid}`}
                       className="forum-button-icon forum-button-icon-danger"
@@ -520,7 +513,7 @@ function AdminPanelInner() {
                     <button
                       type="button"
                       onClick={() => {
-                        void handleDeleteCode(accessCode);
+                        setDialogState({ kind: "delete-code", target: accessCode });
                       }}
                       disabled={
                         busyAction === `code:${accessCode.hash}` ||
@@ -546,6 +539,46 @@ function AdminPanelInner() {
           )}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={dialogState !== null}
+        title={
+          dialogState?.kind === "delete-user"
+            ? "Supprimer ce compte ?"
+            : "Supprimer ce code ?"
+        }
+        description={
+          dialogState?.kind === "delete-user"
+            ? `Le compte ${dialogState.target.username} et tout son contenu seront supprimés.`
+            : dialogState?.kind === "delete-code"
+              ? `Le code ${dialogState.target.note || dialogState.target.fingerprint} sera supprimé définitivement.`
+              : ""
+        }
+        confirmLabel="Supprimer"
+        tone="danger"
+        busy={
+          dialogState?.kind === "delete-user"
+            ? busyAction === `user:delete:${dialogState.target.uid}`
+            : dialogState?.kind === "delete-code"
+              ? busyAction === `code:delete:${dialogState.target.hash}`
+              : false
+        }
+        onClose={() => {
+          if (!busyAction) {
+            setDialogState(null);
+          }
+        }}
+        onConfirm={() => {
+          if (dialogState?.kind === "delete-user") {
+            void handleDeleteUser(dialogState.target);
+            return;
+          }
+
+          if (dialogState?.kind === "delete-code") {
+            void handleDeleteCode(dialogState.target);
+          }
+        }}
+      />
     </div>
   );
 }

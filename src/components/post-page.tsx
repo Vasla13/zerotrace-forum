@@ -5,6 +5,7 @@ import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Heart, MessageSquareMore, Pencil, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { PostMediaGallery } from "@/components/post-media-gallery";
 import {
@@ -26,6 +27,11 @@ type PostPageProps = {
   postId: string;
 };
 
+type PostDialogState =
+  | { kind: "delete-post" }
+  | { kind: "delete-comment"; commentId: string }
+  | null;
+
 export function PostPage({ postId }: PostPageProps) {
   const router = useRouter();
   const { configured, loading: authLoading, profile, user } = useAuth();
@@ -37,6 +43,7 @@ export function PostPage({ postId }: PostPageProps) {
   const [editingCommentDraft, setEditingCommentDraft] = useState("");
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dialogState, setDialogState] = useState<PostDialogState>(null);
 
   useEffect(() => {
     if (!configured) {
@@ -138,17 +145,12 @@ export function PostPage({ postId }: PostPageProps) {
       return;
     }
 
-    const confirmed = window.confirm("Supprimer ce post ?");
-
-    if (!confirmed) {
-      return;
-    }
-
     setBusyAction("post:delete");
 
     try {
       await deleteForumPost(postId, user.uid);
       toast.success("Post supprimé.");
+      setDialogState(null);
       startTransition(() => {
         router.push("/");
       });
@@ -164,17 +166,12 @@ export function PostPage({ postId }: PostPageProps) {
       return;
     }
 
-    const confirmed = window.confirm("Supprimer ce commentaire ?");
-
-    if (!confirmed) {
-      return;
-    }
-
     setBusyAction(`comment:delete:${commentId}`);
 
     try {
       await deletePostComment(postId, commentId, user.uid);
       toast.success("Commentaire supprimé.");
+      setDialogState(null);
     } catch (nextError) {
       toast.error(getErrorMessage(nextError));
     } finally {
@@ -289,7 +286,9 @@ export function PostPage({ postId }: PostPageProps) {
               </Link>
               <button
                 type="button"
-                onClick={handleDeletePost}
+                onClick={() => {
+                  setDialogState({ kind: "delete-post" });
+                }}
                 disabled={busyAction === "post:delete"}
                 className="forum-button-icon forum-button-icon-danger"
                 title="Supprimer"
@@ -434,7 +433,10 @@ export function PostPage({ postId }: PostPageProps) {
                           type="button"
                           className="forum-button-icon forum-button-icon-danger"
                           onClick={() => {
-                            void handleDeleteComment(comment.id);
+                            setDialogState({
+                              kind: "delete-comment",
+                              commentId: comment.id,
+                            });
                           }}
                           disabled={busyAction === `comment:delete:${comment.id}`}
                           title="Supprimer"
@@ -496,6 +498,46 @@ export function PostPage({ postId }: PostPageProps) {
           )}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={dialogState !== null}
+        title={
+          dialogState?.kind === "delete-post"
+            ? "Supprimer ce post ?"
+            : "Supprimer ce commentaire ?"
+        }
+        description={
+          dialogState?.kind === "delete-post"
+            ? "Ce post sera retiré du forum avec ses réponses et ses interactions."
+            : dialogState?.kind === "delete-comment"
+              ? "Ce commentaire sera retiré définitivement de la discussion."
+              : ""
+        }
+        confirmLabel="Supprimer"
+        tone="danger"
+        busy={
+          dialogState?.kind === "delete-post"
+            ? busyAction === "post:delete"
+            : dialogState?.kind === "delete-comment"
+              ? busyAction === `comment:delete:${dialogState.commentId}`
+              : false
+        }
+        onClose={() => {
+          if (!busyAction) {
+            setDialogState(null);
+          }
+        }}
+        onConfirm={() => {
+          if (dialogState?.kind === "delete-post") {
+            void handleDeletePost();
+            return;
+          }
+
+          if (dialogState?.kind === "delete-comment") {
+            void handleDeleteComment(dialogState.commentId);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -3,13 +3,17 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
+import type { AdminSession } from "@/lib/types/admin";
+import { fetchOptionalAdminSession } from "@/lib/data/admin";
 import { subscribeToUserProfile } from "@/lib/data/users";
 import { getFirebaseAuth, prepareFirebaseAuth } from "@/lib/firebase/client";
 import { isFirebaseConfigured } from "@/lib/firebase/config";
 import type { ForumUserProfile } from "@/lib/types/forum";
 
 type AuthContextValue = {
+  adminSession: AdminSession | null;
   configured: boolean;
+  isAdmin: boolean;
   loading: boolean;
   profile: ForumUserProfile | null;
   user: User | null;
@@ -24,6 +28,7 @@ type AuthProviderProps = {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ForumUserProfile | null>(null);
+  const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
   const [loading, setLoading] = useState(isFirebaseConfigured);
 
   useEffect(() => {
@@ -47,6 +52,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(nextUser);
           unsubscribeProfile?.();
           unsubscribeProfile = undefined;
+          setAdminSession(null);
 
           if (!nextUser) {
             setProfile(null);
@@ -65,6 +71,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
               setLoading(false);
             },
           );
+
+          void fetchOptionalAdminSession(nextUser)
+            .then((nextAdminSession) => {
+              if (!active) {
+                return;
+              }
+
+              setAdminSession(nextAdminSession);
+            })
+            .catch(() => {
+              if (!active) {
+                return;
+              }
+
+              setAdminSession(null);
+            });
         });
       } catch {
         if (active) {
@@ -85,7 +107,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   return (
     <AuthContext.Provider
       value={{
+        adminSession,
         configured: isFirebaseConfigured,
+        isAdmin: Boolean(adminSession?.isAdmin),
         loading,
         profile,
         user,
