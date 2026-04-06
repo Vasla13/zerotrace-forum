@@ -44,7 +44,9 @@ export default function RootLayout({
       <body className="min-h-screen antialiased">
         <AppProviders>
           <div className="relative flex min-h-screen flex-col">
-            <div aria-hidden="true" className="forum-background" />
+            <div aria-hidden="true" className="forum-background">
+              <div className="forum-background-chains" />
+            </div>
             <Header />
             <main className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 px-4 pb-28 pt-6 sm:px-6 md:pb-12 lg:px-8">
               {children}
