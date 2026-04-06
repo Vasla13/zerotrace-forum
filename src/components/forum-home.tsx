@@ -157,7 +157,7 @@ export function ForumHome() {
                   Connexion
                 </Link>
                 <Link href="/register" className="forum-button-ghost">
-                  Créer un profil
+                  Premier passage
                 </Link>
               </>
             )}

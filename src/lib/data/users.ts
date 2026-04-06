@@ -18,6 +18,17 @@ import { getResponseErrorMessage } from "@/lib/utils/errors";
 import { normalizeUsername } from "@/lib/utils/text";
 import type { ProfileUpdateValues, ProfileUsernameValues } from "@/lib/validation/profile";
 
+export type AccessAuthResult =
+  | {
+      created: boolean;
+      kind: "authenticated";
+      username: string;
+    }
+  | {
+      kind: "needs-username";
+      suggestions: string[];
+    };
+
 async function buildAuthorizedHeaders(user: User) {
   return {
     Authorization: `Bearer ${await user.getIdToken()}`,
@@ -73,19 +84,30 @@ export async function authenticateWithAccessCode(values: AccessAuthValues) {
     throw new Error(await getResponseErrorMessage(response));
   }
 
-  const payload = (await response.json()) as {
-    created: boolean;
-    token: string;
-    username: string;
-  };
+  const payload = (await response.json()) as
+    | {
+        created: boolean;
+        kind: "authenticated";
+        token: string;
+        username: string;
+      }
+    | {
+        kind: "needs-username";
+        suggestions: string[];
+      };
+
+  if (payload.kind === "needs-username") {
+    return payload satisfies AccessAuthResult;
+  }
 
   await prepareFirebaseAuth();
   await signInWithCustomToken(getFirebaseAuth(), payload.token);
 
   return {
     created: payload.created,
+    kind: "authenticated" as const,
     username: payload.username,
-  };
+  } satisfies AccessAuthResult;
 }
 
 export async function signOutForumUser() {

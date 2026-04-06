@@ -102,10 +102,10 @@ export function MobileBottomNav() {
         })}
 
         <Link
-          href={user ? "/posts/new" : "/register"}
+          href={user ? "/posts/new" : "/login"}
           className="forum-mobile-dock-post"
-          aria-label={user ? "Nouveau post" : "Entrer"}
-          title={user ? "Publier" : "Entrer"}
+          aria-label={user ? "Nouveau post" : "Accès"}
+          title={user ? "Publier" : "Accès"}
         >
           <Plus className="h-5 w-5" />
         </Link>

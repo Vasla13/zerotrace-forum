@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { RadioTower } from "lucide-react";
+import clsx from "clsx";
 import { AccessGatewayPanel } from "@/components/access-gateway-panel";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { useAuth } from "@/providers/auth-provider";
@@ -33,43 +33,39 @@ export function AuthForm({ mode }: AuthFormProps) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 items-center justify-center">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 items-center justify-center">
       <div className="forum-auth-shell w-full">
-        <section className="forum-card forum-auth-card w-full p-6 sm:p-8">
-          <div className="forum-section-head items-start">
-            <div>
-              <span className="forum-pill">
-                <RadioTower className="h-3.5 w-3.5" />
-                {isRegisterMode ? "Profil" : "Connexion"}
-              </span>
-              <h1 className="forum-title mt-5 text-4xl sm:text-5xl">
-                {isRegisterMode ? "Créer un profil" : "Connexion"}
-              </h1>
-              <p className="forum-muted mt-3 text-sm">
-                {isRegisterMode
-                  ? "Entre un code et choisis un pseudo si besoin."
-                  : "Entre ton code pour ouvrir la session."}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-7">
-            <AccessGatewayPanel targetAfterAuth={targetAfterAuth} />
-          </div>
-
-          <div className="forum-divider mt-6" />
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-            <span className="forum-muted">
-              {isRegisterMode ? "Déjà un profil ?" : "Pas encore de profil ?"}
-            </span>
+        <div className="forum-auth-console">
+          <nav className="forum-auth-menu" aria-label="Entrée">
             <Link
-              href={isRegisterMode ? "/login" : "/register"}
-              className="forum-link font-semibold"
+              href="/login"
+              className={clsx(
+                "forum-auth-menu-link",
+                !isRegisterMode && "forum-auth-menu-link-active",
+              )}
             >
-              {isRegisterMode ? "Connexion" : "Créer un profil"}
+              Connexion
             </Link>
+            <Link
+              href="/register"
+              className={clsx(
+                "forum-auth-menu-link",
+                isRegisterMode && "forum-auth-menu-link-active",
+              )}
+            >
+              Premier passage
+            </Link>
+            <Link href="/" className="forum-auth-menu-link">
+              Forum public
+            </Link>
+          </nav>
+
+          <div className="forum-auth-layout">
+            <section className="forum-card forum-auth-card w-full p-6 sm:p-8">
+              <AccessGatewayPanel targetAfterAuth={targetAfterAuth} />
+            </section>
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );
