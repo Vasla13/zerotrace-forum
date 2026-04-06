@@ -35,3 +35,17 @@ export function getErrorMessage(error: unknown) {
 
   return "Une erreur inattendue est survenue.";
 }
+
+export async function getResponseErrorMessage(response: Response) {
+  try {
+    const payload = (await response.json()) as { message?: unknown };
+
+    if (typeof payload.message === "string" && payload.message.trim()) {
+      return payload.message;
+    }
+  } catch {
+    return `Erreur ${response.status}.`;
+  }
+
+  return `Erreur ${response.status}.`;
+}

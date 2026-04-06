@@ -55,7 +55,7 @@ export function Header() {
                 NEST
               </div>
               <div className="forum-brand-tagline text-[11px] uppercase tracking-[0.24em]">
-                net forum // 2035
+                forum
               </div>
             </div>
           </Link>
@@ -85,17 +85,14 @@ export function Header() {
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <div className="hidden items-center gap-3 border border-[color:var(--line)] bg-[rgba(0,255,156,0.04)] px-3 py-2 text-[11px] uppercase tracking-[0.2em] lg:flex">
-            <span className="text-[color:var(--accent)]">nest</span>
-            <span className="text-[color:var(--foreground)]">
-              access // 2035
-            </span>
-          </div>
           {user ? (
             <>
+              <Link href="/admin" className="forum-button-ghost">
+                Admin
+              </Link>
               <Link href="/posts/new" className="forum-button-primary">
                 <Plus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Nouveau post</span>
+                <span className="hidden sm:inline">Publier</span>
               </Link>
               {profile ? (
                 <Link

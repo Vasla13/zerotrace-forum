@@ -12,14 +12,10 @@ import {
   subscribeToComments,
   updatePostComment,
 } from "@/lib/data/comments";
-import { subscribeToLikeState, togglePostLike } from "@/lib/data/likes";
+import { subscribeToOwnLike, togglePostLike } from "@/lib/data/likes";
 import { deleteForumPost, subscribeToPost } from "@/lib/data/posts";
-import type { ForumComment, ForumPost, LikeState } from "@/lib/types/forum";
-import {
-  formatAbsoluteDate,
-  formatRelativeDate,
-  formatSystemDate,
-} from "@/lib/utils/date";
+import type { ForumComment, ForumPost } from "@/lib/types/forum";
+import { formatAbsoluteDate, formatRelativeDate, formatSystemDate } from "@/lib/utils/date";
 import { getErrorMessage } from "@/lib/utils/errors";
 import { commentSchema } from "@/lib/validation/forum";
 import { useAuth } from "@/providers/auth-provider";
@@ -34,10 +30,7 @@ export function PostPage({ postId }: PostPageProps) {
   const { configured, loading: authLoading, profile, user } = useAuth();
   const [post, setPost] = useState<ForumPost | null | undefined>(undefined);
   const [comments, setComments] = useState<ForumComment[]>([]);
-  const [likeState, setLikeState] = useState<LikeState>({
-    count: 0,
-    likedByUser: false,
-  });
+  const [likedByUser, setLikedByUser] = useState(false);
   const [commentDraft, setCommentDraft] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentDraft, setEditingCommentDraft] = useState("");
@@ -86,11 +79,11 @@ export function PostPage({ postId }: PostPageProps) {
       return;
     }
 
-    const unsubscribe = subscribeToLikeState(
+    const unsubscribe = subscribeToOwnLike(
       postId,
       user?.uid ?? null,
-      (nextLikeState) => {
-        setLikeState(nextLikeState);
+      (nextLikedByUser) => {
+        setLikedByUser(nextLikedByUser);
       },
       (nextError) => {
         setError(getErrorMessage(nextError));
@@ -110,8 +103,9 @@ export function PostPage({ postId }: PostPageProps) {
     }
 
     setBusyAction("like");
+
     try {
-      await togglePostLike(postId, user.uid);
+      await togglePostLike(postId, user);
     } catch (nextError) {
       toast.error(getErrorMessage(nextError));
     } finally {
@@ -143,15 +137,14 @@ export function PostPage({ postId }: PostPageProps) {
       return;
     }
 
-    const confirmed = window.confirm(
-      "Supprimer ce post et tous ses commentaires ?",
-    );
+    const confirmed = window.confirm("Supprimer ce post ?");
 
     if (!confirmed) {
       return;
     }
 
     setBusyAction("post:delete");
+
     try {
       await deleteForumPost(postId, user.uid);
       toast.success("Post supprimé.");
@@ -171,11 +164,13 @@ export function PostPage({ postId }: PostPageProps) {
     }
 
     const confirmed = window.confirm("Supprimer ce commentaire ?");
+
     if (!confirmed) {
       return;
     }
 
     setBusyAction(`comment:delete:${commentId}`);
+
     try {
       await deletePostComment(postId, commentId, user.uid);
       toast.success("Commentaire supprimé.");
@@ -234,9 +229,7 @@ export function PostPage({ postId }: PostPageProps) {
     return (
       <div className="mx-auto flex w-full max-w-3xl flex-1 items-center justify-center">
         <section className="forum-card w-full p-8 text-center">
-          <h1 className="forum-title text-4xl font-semibold">
-            Post introuvable.
-          </h1>
+          <h1 className="forum-title text-4xl font-semibold">Post introuvable.</h1>
           <p className="forum-muted mt-4 text-sm">
             Ce contenu a peut-être été supprimé.
           </p>
@@ -312,10 +305,10 @@ export function PostPage({ postId }: PostPageProps) {
           >
             <Heart
               className={`mr-2 h-4 w-4 ${
-                likeState.likedByUser ? "fill-current text-red-500" : ""
+                likedByUser ? "fill-current text-red-500" : ""
               }`}
             />
-            {likeState.count}
+            {post.likeCount}
           </button>
           <div className="forum-meta-line">
             <MessageSquareMore className="h-3.5 w-3.5 text-[color:var(--accent)]" />
@@ -336,14 +329,11 @@ export function PostPage({ postId }: PostPageProps) {
       <section className="forum-card p-6 sm:p-8">
         <div className="forum-section-head">
           <div>
-            <h2 className="forum-title mt-4 text-3xl sm:text-4xl">
-              Réponses
-            </h2>
+            <h2 className="forum-title mt-4 text-3xl sm:text-4xl">Réponses</h2>
             <div className="forum-meta-line mt-3">
               <span>{comments.length} réponse(s)</span>
             </div>
           </div>
-          <div className="forum-muted text-sm">ouvert</div>
         </div>
 
         {user ? (
@@ -357,9 +347,7 @@ export function PostPage({ postId }: PostPageProps) {
               }}
             />
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <span className="forum-inline-note">
-                {commentDraft.trim().length}/1000
-              </span>
+              <span className="forum-inline-note">{commentDraft.trim().length}/1000</span>
               <button
                 type="button"
                 onClick={handleCreateComment}
@@ -488,10 +476,10 @@ export function PostPage({ postId }: PostPageProps) {
             })
           ) : (
             <div className="forum-card-quiet px-6 py-10 text-center">
-              <h3 className="forum-title text-2xl sm:text-3xl">
-                Aucune réponse
-              </h3>
-              <p className="forum-muted mt-3 text-sm">Ce post attend sa première réponse.</p>
+              <h3 className="forum-title text-2xl sm:text-3xl">Aucune réponse</h3>
+              <p className="forum-muted mt-3 text-sm">
+                Ce post attend sa première réponse.
+              </p>
             </div>
           )}
         </div>

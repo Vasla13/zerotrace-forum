@@ -2,32 +2,15 @@
 
 import Link from "next/link";
 import { useDeferredValue, useEffect, useRef, useState } from "react";
-import {
-  ArrowRight,
-  MessageSquareText,
-  Plus,
-  Search,
-  Shield,
-  Sparkles,
-  X,
-} from "lucide-react";
-import { AccessGatewayPanel } from "@/components/access-gateway-panel";
-import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+import type { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import { ArrowRight, MessageSquareText, Plus, Search, X } from "lucide-react";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { InputShell } from "@/components/input-shell";
 import { PostCard } from "@/components/post-card";
 import { fetchFeedPage } from "@/lib/data/posts";
-import { type ForumPost } from "@/lib/types/forum";
+import type { ForumPost } from "@/lib/types/forum";
 import { getErrorMessage } from "@/lib/utils/errors";
 import { useAuth } from "@/providers/auth-provider";
-
-const manifestoLines = [
-  "Fuites, preuves et dossiers.",
-  "Interface simple. Lecture rapide.",
-  "Publie peu. Publie juste.",
-] as const;
-
-const relayTags = ["net", "threads", "preuves", "nœuds"] as const;
 
 export function ForumHome() {
   const { configured, profile, user } = useAuth();
@@ -54,6 +37,7 @@ export function ForumHome() {
 
     async function loadFirstPage() {
       setLoading(true);
+
       try {
         const page = await fetchFeedPage({
           pageSize: 8,
@@ -98,6 +82,7 @@ export function ForumHome() {
       }
 
       const element = searchInputRef.current;
+
       if (!element) {
         return;
       }
@@ -122,6 +107,7 @@ export function ForumHome() {
     }
 
     setLoadingMore(true);
+
     try {
       const nextPage = await fetchFeedPage({
         cursor,
@@ -147,154 +133,63 @@ export function ForumHome() {
 
   return (
     <div className="forum-grid w-full">
-      <section className="forum-card forum-hero-panel overflow-hidden p-6 sm:p-8">
-        <div
-          className={`forum-hero-grid ${
-            user ? "lg:grid-cols-[1.02fr_0.98fr]" : "lg:grid-cols-[1.08fr_0.92fr]"
-          }`}
-        >
-          <div className="flex flex-col justify-between">
-            <div>
-              <div className="forum-toolbar">
-                <span className="forum-pill">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  NEST
-                </span>
-              </div>
-              <h1 className="forum-title mt-5 max-w-3xl text-4xl leading-none sm:text-5xl lg:text-6xl">
-                NEST // NET
-              </h1>
-              <p className="forum-brief-copy mt-4">
-                Forum cyberpunk pour posts, preuves et discussions. Interface
-                directe. Lecture rapide.
-              </p>
-              <div className="forum-meta-line mt-5">
-                <strong>{posts.length}</strong>
-                <span>{isSearching ? resultLabel : "posts visibles"}</span>
-                <span className="forum-meta-dot" />
-                <span>cycle 2035</span>
-                <span className="forum-meta-dot" />
-                <span>
-                  {profile
-                    ? `connecté : ${profile.username}`
-                    : "lecture publique"}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6 max-w-2xl">
-              <InputShell
-                id="feed-search"
-                ref={searchInputRef}
-                icon={Search}
-                placeholder="Rechercher un post, un sujet, un pseudo…"
-                type="search"
-                value={searchInput}
-                onChange={(event) => {
-                  setSearchInput(event.target.value);
-                }}
-              />
-            </div>
-
-            <div className="forum-toolbar mt-4">
-              {user ? (
-                <Link href="/posts/new" className="forum-button-primary">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nouveau post
-                </Link>
-              ) : (
-                <>
-                  <Link href="/login" className="forum-button-primary">
-                    Connexion
-                  </Link>
-                  <Link href="/#feed-search" className="forum-button-ghost">
-                    Explorer
-                  </Link>
-                </>
-              )}
-              {searchInput ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchInput("");
-                  }}
-                  className="forum-button-ghost"
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  Effacer
-                </button>
-              ) : null}
-            </div>
+      <section className="forum-card p-6 sm:p-7">
+        <div className="forum-section-head">
+          <div>
+            <span className="forum-pill">Forum</span>
+            <h1 className="forum-title mt-4 text-4xl sm:text-5xl">Posts</h1>
+            <p className="forum-muted mt-3 max-w-2xl text-sm leading-7">
+              {user && profile
+                ? `Connecté en tant que ${profile.username}.`
+                : "Lecture publique. Connexion requise pour publier et répondre."}
+            </p>
           </div>
 
-          {user ? (
-            <div className="forum-hero-visual">
-              <div className="forum-toolbar justify-between gap-3">
-                <span className="forum-inline-note">interface // cyberpunk 2035</span>
-                <span className="forum-pill">
-                  <Shield className="h-3.5 w-3.5" />
-                  online
-                </span>
-              </div>
-              <div className="forum-meta-line">
-                <span>forum</span>
-                <span className="forum-meta-dot" />
-                <span>public</span>
-                <span className="forum-meta-dot" />
-                <span>2035</span>
-              </div>
-              <h2 className="forum-title text-3xl leading-none sm:text-4xl">
-                Forum simple. Signal clair.
-              </h2>
-              <p className="forum-muted max-w-lg text-sm leading-7">
-                Pensé pour lire vite, publier vite et garder le focus sur le
-                contenu.
-              </p>
-              <div className="forum-hero-tags">
-                {relayTags.map((tag) => (
-                  <span key={tag} className="forum-hero-tag">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              <div className="forum-divider" />
-              <div className="forum-meta-line">
-                <span>session</span>
-                <span className="forum-meta-dot" />
-                <strong>{profile?.username}</strong>
-                <span className="forum-meta-dot" />
-                <span>{isSearching ? "recherche active" : "forum actif"}</span>
-              </div>
-            </div>
-          ) : (
-            <AccessGatewayPanel targetAfterAuth="/" className="h-full" />
-          )}
+          <div className="forum-toolbar">
+            {user ? (
+              <Link href="/posts/new" className="forum-button-primary">
+                <Plus className="mr-2 h-4 w-4" />
+                Publier
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="forum-button-primary">
+                  Connexion
+                </Link>
+                <Link href="/register" className="forum-button-ghost">
+                  Créer un profil
+                </Link>
+              </>
+            )}
+          </div>
         </div>
 
-        {user ? (
-          <div className="forum-manifest">
-            <div>
-              <div className="forum-inline-note">mode // 2035</div>
-              <p className="forum-title mt-3 text-2xl leading-none sm:text-3xl">
-                Simple. Lisible. Direct.
-              </p>
-            </div>
-            <div className="forum-manifest-list">
-              {manifestoLines.map((line, index) => (
-                <div key={line} className="forum-manifest-row">
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <p>{line}</p>
-                </div>
-              ))}
-              <div className="forum-manifest-row">
-                <span>04</span>
-                <p>
-                  {isSearching
-                    ? "Recherche active."
-                    : "Lis vite. Poste utile."}
-                </p>
-              </div>
-            </div>
+        <div className="mt-6 max-w-2xl">
+          <InputShell
+            id="feed-search"
+            ref={searchInputRef}
+            icon={Search}
+            placeholder="Rechercher un post, un sujet, un pseudo…"
+            type="search"
+            value={searchInput}
+            onChange={(event) => {
+              setSearchInput(event.target.value);
+            }}
+          />
+        </div>
+
+        {searchInput ? (
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => {
+                setSearchInput("");
+              }}
+              className="forum-button-ghost"
+            >
+              <X className="mr-2 h-4 w-4" />
+              Effacer la recherche
+            </button>
           </div>
         ) : null}
       </section>
@@ -302,12 +197,10 @@ export function ForumHome() {
       <section className="forum-card forum-feed-section p-6 sm:p-7">
         <div className="forum-section-head">
           <div>
-            <div className="forum-toolbar">
-              <span className="forum-pill">
-                <MessageSquareText className="h-3.5 w-3.5" />
-                {isSearching ? "Recherche" : "Forum"}
-              </span>
-            </div>
+            <span className="forum-pill">
+              <MessageSquareText className="h-3.5 w-3.5" />
+              {isSearching ? "Recherche" : "Fil"}
+            </span>
             <h2 className="forum-title mt-4 text-3xl sm:text-4xl">
               {isSearching ? "Résultats" : "Posts récents"}
             </h2>
@@ -316,24 +209,6 @@ export function ForumHome() {
                 {isSearching ? resultLabel : "du plus récent au plus ancien"}
               </span>
             </div>
-          </div>
-          <div className="forum-toolbar">
-            {isSearching ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchInput("");
-                }}
-                className="forum-button-ghost"
-              >
-                Tout voir
-              </button>
-            ) : null}
-            {user ? (
-              <Link href="/posts/new" className="forum-button-ghost">
-                Publier
-              </Link>
-            ) : null}
           </div>
         </div>
 
@@ -380,14 +255,14 @@ export function ForumHome() {
             <p className="forum-muted mt-3 max-w-xl text-sm">
               {isSearching
                 ? "Essaie un autre mot-clé."
-                : "Sois le premier à poster."}
+                : "Publie le premier message."}
             </p>
             <div className="mt-6">
               <Link
                 href={user ? "/posts/new" : "/login"}
                 className="forum-button-primary"
               >
-                {user ? "Publier" : "Entrer"}
+                {user ? "Publier" : "Connexion"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>

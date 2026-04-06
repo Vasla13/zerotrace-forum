@@ -22,8 +22,7 @@ export const metadata: Metadata = {
     default: "NEST",
     template: "%s | NEST",
   },
-  description:
-    "Réseau clandestin anti-corporation inspiré du Net de Cyberpunk 2077, avec accès par code, posts, commentaires, likes et profils nœuds.",
+  description: "Forum simple avec accès par code, posts, commentaires et profils.",
   icons: {
     icon: "/nest-logo.png",
     shortcut: "/nest-logo.png",
@@ -37,7 +36,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${spaceGrotesk.variable} ${cyberBrush.variable}`}>
+    <html
+      lang="fr"
+      data-scroll-behavior="smooth"
+      className={`${spaceGrotesk.variable} ${cyberBrush.variable}`}
+    >
       <body className="min-h-screen antialiased">
         <AppProviders>
           <div className="relative flex min-h-screen flex-col">

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PenLine, Send, ShieldCheck } from "lucide-react";
+import { PenLine, Send } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import {
@@ -175,23 +175,10 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
             <h1 className="forum-title mt-5 text-4xl sm:text-5xl">
               {mode === "create" ? "Nouveau post" : "Modifier le post"}
             </h1>
+            <p className="forum-muted mt-3 text-sm">
+              Un titre clair et un message utile.
+            </p>
           </div>
-          <span className="forum-inline-note">
-            forum // 2035
-          </span>
-        </div>
-
-        <div className="forum-meta-line mt-5">
-          <strong>120</strong>
-          <span>titre max</span>
-          <span className="forum-meta-dot" />
-          <strong>5000</strong>
-          <span>contenu max</span>
-          <span className="forum-meta-dot" />
-          <span className="inline-flex items-center gap-2">
-            <ShieldCheck className="h-3.5 w-3.5 text-[color:var(--accent-secondary)]" />
-            post public
-          </span>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-7 grid gap-5">
@@ -233,7 +220,7 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
 
           <div className="forum-toolbar justify-between">
             <span className="forum-muted text-sm">
-              Simple et lisible.
+              Public.
             </span>
             <div className="forum-toolbar">
               <Link

@@ -18,9 +18,9 @@ Le projet Firebase dédié a été créé le `4 avril 2026` avec :
 
 ## Fonctionnalités
 
-- accès immersif avec intro terminal et passerelle réseau
-- authentification par `code d’accès` à usage unique logique
-- pseudo optionnel avec génération d’alias cyberpunk
+- accès par code vers un forum public
+- authentification par `code d’accès` validé côté serveur
+- pseudo optionnel avec génération d’alias
 - session persistée via Firebase Auth
 - profil public avec pseudo, date d’inscription et nombre de posts
 - création, modification et suppression de ses propres posts
@@ -31,7 +31,8 @@ Le projet Firebase dédié a été créé le `4 avril 2026` avec :
 - recherche simple par mots-clés
 - pagination via chargement progressif
 - avatar par défaut généré depuis le pseudo
-- thème cyberpunk vert néon, scanlines, bruit visuel et ambiance anti-corpo
+- interface forum volontairement simple
+- panneau admin web pour gérer les utilisateurs et les codes d’accès
 
 ## Arborescence
 
@@ -81,6 +82,33 @@ npm install
 
 Le projet est déjà branché localement sur Firebase via `.env.local`.
 
+Pour les routes serveur d’authentification et d’administration locale, ajoute aussi :
+
+```bash
+FIREBASE_ADMIN_PROJECT_ID=
+FIREBASE_ADMIN_CLIENT_EMAIL=
+FIREBASE_ADMIN_PRIVATE_KEY=
+FORUM_BOOTSTRAP_ADMIN_UIDS=
+FORUM_BOOTSTRAP_ADMIN_USERNAMES=
+FORUM_BOOTSTRAP_ACCESS_CODES=
+```
+
+Pour ouvrir le premier accès admin dans le site, renseigne au moins :
+
+```bash
+FORUM_BOOTSTRAP_ADMIN_USERNAMES=tonpseudo
+```
+
+Connecte-toi avec ce pseudo, puis ouvre `/admin`.
+
+Si tu veux aussi provisionner un code local fixe pour ce compte, tu peux ajouter :
+
+```bash
+FORUM_BOOTSTRAP_ACCESS_CODES=netrunner
+```
+
+Dans ce cas, connecte-toi avec le pseudo `trinity` et le code `netrunner`, puis ouvre `/admin`.
+
 ## Lancement
 
 ```bash
@@ -95,6 +123,14 @@ Avant d’utiliser la base distante, pousse les règles et index :
 
 ```bash
 npm run firebase:deploy
+```
+
+## Assainissement des anciennes données
+
+Après migration depuis l’ancien flux d’auth, tu peux nettoyer la base et durcir les anciens comptes :
+
+```bash
+npm run firebase:harden
 ```
 
 ## Site en ligne
@@ -143,17 +179,26 @@ npm run firebase:deploy:full
 
 ## Gestion des codes d’accès
 
-Pour générer de nouveaux codes d’accès et injecter leurs hashes dans le projet :
+Depuis le site, ouvre `/admin` pour :
+
+- générer des codes d’accès
+- révoquer / réactiver des codes
+- promouvoir ou retirer des admins
+- supprimer des comptes utilisateurs
+
+En CLI, tu peux aussi générer de nouveaux codes directement dans Firestore :
 
 ```bash
 npm run access:codes -- --count 5
 ```
 
-Le script affiche les codes en clair dans le terminal et met à jour `src/lib/generated/access-codes.ts`.
+Le script affiche les codes en clair dans le terminal et les enregistre dans la collection `accessCodes`.
 
 ## Notes techniques
 
 - Les identités sont mappées sur des comptes Firebase cachés dérivés du code d’accès.
-- Les règles Firestore limitent la modification et la suppression au propriétaire du contenu.
+- Les codes d’accès sont validés côté serveur puis convertis en custom token Firebase.
+- Les règles Firestore limitent la modification directe côté client et réservent les actions sensibles au backend.
 - Le rendu des posts et commentaires est en texte brut, sans HTML injecté.
-- La recherche s’appuie sur un index de mots-clés généré au moment de la création / édition des posts.
+- La recherche parcourt les posts du plus récent au plus ancien pour renvoyer des résultats complets.
+- Les anciens hashes locaux peuvent être importés vers Firestore avec `npm run firebase:harden`.

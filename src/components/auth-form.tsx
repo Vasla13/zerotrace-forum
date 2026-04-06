@@ -40,15 +40,17 @@ export function AuthForm({ mode }: AuthFormProps) {
             <div>
               <span className="forum-pill">
                 <RadioTower className="h-3.5 w-3.5" />
-                {isRegisterMode ? "Nouveau profil" : "Connexion"}
+                {isRegisterMode ? "Profil" : "Connexion"}
               </span>
               <h1 className="forum-title mt-5 text-4xl sm:text-5xl">
-                {isRegisterMode
-                  ? "Créer ton profil"
-                  : "Accès au forum"}
+                {isRegisterMode ? "Créer un profil" : "Connexion"}
               </h1>
+              <p className="forum-muted mt-3 text-sm">
+                {isRegisterMode
+                  ? "Entre un code et choisis un pseudo si besoin."
+                  : "Entre ton code pour ouvrir la session."}
+              </p>
             </div>
-            <span className="forum-inline-note">nest // 2035</span>
           </div>
 
           <div className="mt-7">
@@ -58,9 +60,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           <div className="forum-divider mt-6" />
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
             <span className="forum-muted">
-              {isRegisterMode
-                ? "Pas d’inscription classique."
-                : "Accès par code uniquement."}
+              {isRegisterMode ? "Déjà un profil ?" : "Pas encore de profil ?"}
             </span>
             <Link
               href={isRegisterMode ? "/login" : "/register"}

@@ -147,13 +147,11 @@ export function ProfilePage({ username }: ProfilePageProps) {
               className="mt-1"
             />
             <div>
-              <h1 className="forum-title mt-4 text-4xl sm:text-5xl">
-                {profile.username}
-              </h1>
+              <h1 className="forum-title mt-4 text-4xl sm:text-5xl">{profile.username}</h1>
               <div className="forum-meta-line mt-3">
                 <span>{isCurrentUser ? "ton profil" : "profil public"}</span>
                 <span className="forum-meta-dot" />
-                <span>actif depuis {formatJoinedDate(profile.createdAt)}</span>
+                <span>inscrit le {formatJoinedDate(profile.createdAt)}</span>
                 <span className="forum-meta-dot" />
                 <strong>{postCount} posts</strong>
               </div>
@@ -178,7 +176,7 @@ export function ProfilePage({ username }: ProfilePageProps) {
               Posts de {profile.username}
             </h2>
             <div className="forum-meta-line mt-3">
-              <span>12 posts récents</span>
+              <span>12 plus récents</span>
             </div>
           </div>
           <div className="forum-muted text-sm">

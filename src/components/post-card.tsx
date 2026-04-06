@@ -1,12 +1,8 @@
 import Link from "next/link";
-import { ArrowRight, Clock3 } from "lucide-react";
+import { ArrowRight, Clock3, Heart } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import type { ForumPost } from "@/lib/types/forum";
-import {
-  formatAbsoluteDate,
-  formatRelativeDate,
-  formatSystemDate,
-} from "@/lib/utils/date";
+import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
 import { excerpt } from "@/lib/utils/text";
 
 type PostCardProps = {
@@ -41,10 +37,6 @@ export function PostCard({ post }: PostCardProps) {
         {wasEdited ? <span className="forum-inline-note">édité</span> : null}
       </div>
 
-      <div className="forum-meta-line mt-4">
-        <span>{formatSystemDate(post.createdAt)}</span>
-      </div>
-
       <Link href={`/posts/${post.id}`} className="group mt-5 block">
         <h2 className="forum-title text-2xl leading-tight transition group-hover:text-[color:var(--accent-dark)] sm:text-3xl">
           {post.title}
@@ -56,7 +48,10 @@ export function PostCard({ post }: PostCardProps) {
       </p>
 
       <div className="mt-5 flex items-center justify-between gap-4 border-t border-[color:var(--line)] pt-4">
-        <span className="forum-muted text-sm">par {post.author.username}</span>
+        <span className="forum-meta-line text-sm">
+          <Heart className="h-3.5 w-3.5 text-[color:var(--accent)]" />
+          <span>{post.likeCount}</span>
+        </span>
         <Link
           href={`/posts/${post.id}`}
           className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--accent-dark)]"

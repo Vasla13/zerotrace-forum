@@ -1,43 +1,36 @@
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  onSnapshot,
-  setDoc,
-  serverTimestamp,
-} from "firebase/firestore";
+import type { User } from "firebase/auth";
+import { doc, onSnapshot } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase/client";
-import type { LikeState } from "@/lib/types/forum";
+import { getResponseErrorMessage } from "@/lib/utils/errors";
 
-export function subscribeToLikeState(
+export function subscribeToOwnLike(
   postId: string,
   userId: string | null,
-  onData: (state: LikeState) => void,
+  onData: (likedByUser: boolean) => void,
   onError: (error: unknown) => void,
 ) {
-  return onSnapshot(collection(getFirebaseDb(), "posts", postId, "likes"), {
+  if (!userId) {
+    onData(false);
+    return () => undefined;
+  }
+
+  return onSnapshot(doc(getFirebaseDb(), "posts", postId, "likes", userId), {
     next: (snapshot) => {
-      onData({
-        count: snapshot.size,
-        likedByUser: userId ? snapshot.docs.some((doc) => doc.id === userId) : false,
-      });
+      onData(snapshot.exists());
     },
     error: onError,
   });
 }
 
-export async function togglePostLike(postId: string, userId: string) {
-  const likeReference = doc(getFirebaseDb(), "posts", postId, "likes", userId);
-  const snapshot = await getDoc(likeReference);
-
-  if (snapshot.exists()) {
-    await deleteDoc(likeReference);
-    return;
-  }
-
-  await setDoc(likeReference, {
-    uid: userId,
-    createdAt: serverTimestamp(),
+export async function togglePostLike(postId: string, user: User) {
+  const response = await fetch(`/api/posts/${postId}/likes`, {
+    headers: {
+      Authorization: `Bearer ${await user.getIdToken()}`,
+    },
+    method: "POST",
   });
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response));
+  }
 }

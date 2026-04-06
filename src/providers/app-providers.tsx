@@ -1,7 +1,6 @@
 "use client";
 
 import { Toaster } from "sonner";
-import { SignalGate } from "@/components/signal-gate";
 import { AuthProvider } from "@/providers/auth-provider";
 
 type AppProvidersProps = {
@@ -11,7 +10,7 @@ type AppProvidersProps = {
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <AuthProvider>
-      <SignalGate>{children}</SignalGate>
+      {children}
       <Toaster
         position="top-right"
         richColors

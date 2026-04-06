@@ -10,7 +10,6 @@ export type ForumUserProfile = {
   uid: string;
   username: string;
   usernameLower: string;
-  email: string;
   createdAt: Date | null;
 };
 
@@ -19,6 +18,7 @@ export type ForumPost = {
   author: ForumAuthor;
   content: string;
   createdAt: Date | null;
+  likeCount: number;
   searchKeywords: string[];
   title: string;
   updatedAt: Date | null;

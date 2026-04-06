@@ -1,8 +1,6 @@
 import { format, formatDistanceToNowStrict } from "date-fns";
 import { fr } from "date-fns/locale";
 
-const LORE_YEAR = 2035;
-
 export function formatRelativeDate(date: Date | null) {
   if (!date) {
     return "à l’instant";
@@ -16,27 +14,24 @@ export function formatRelativeDate(date: Date | null) {
 
 export function formatAbsoluteDate(date: Date | null) {
   if (!date) {
-    return "En attente";
+    return "Date inconnue";
   }
 
-  return `${format(date, "d MMMM", { locale: fr })} ${LORE_YEAR} à ${format(
-    date,
-    "HH:mm",
-  )}`;
+  return format(date, "d MMMM yyyy 'à' HH:mm", { locale: fr });
 }
 
 export function formatJoinedDate(date: Date | null) {
   if (!date) {
-    return "Récemment";
+    return "Date inconnue";
   }
 
-  return `${format(date, "d MMMM", { locale: fr })} ${LORE_YEAR}`;
+  return format(date, "d MMMM yyyy", { locale: fr });
 }
 
 export function formatSystemDate(date: Date | null) {
   if (!date) {
-    return "SYS//PENDING";
+    return "Date inconnue";
   }
 
-  return `${LORE_YEAR}-${format(date, "MM-dd HH:mm:ss")}`;
+  return format(date, "dd/MM/yyyy HH:mm", { locale: fr });
 }

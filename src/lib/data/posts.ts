@@ -1,7 +1,6 @@
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -12,14 +11,15 @@ import {
   startAfter,
   updateDoc,
   where,
-  writeBatch,
   serverTimestamp,
+  type CollectionReference,
   type DocumentData,
   type DocumentSnapshot,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
-import { getFirebaseDb } from "@/lib/firebase/client";
+import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase/client";
 import type { FeedPage, ForumPost, ForumUserProfile } from "@/lib/types/forum";
+import { getResponseErrorMessage } from "@/lib/utils/errors";
 import { postSchema, type PostFormValues } from "@/lib/validation/forum";
 import { buildSearchKeywords, normalizeText } from "@/lib/utils/text";
 
@@ -54,6 +54,10 @@ function mapPostSnapshot(
     },
     content: String(data.content),
     createdAt: toDate(data.createdAt),
+    likeCount:
+      typeof data.likeCount === "number" && Number.isFinite(data.likeCount)
+        ? data.likeCount
+        : 0,
     searchKeywords: Array.isArray(data.searchKeywords)
       ? data.searchKeywords.map(String)
       : [],
@@ -77,31 +81,20 @@ function matchesSearch(post: ForumPost, search: string) {
     .every((term) => normalizedContent.includes(term));
 }
 
-async function deleteSubcollection(
-  postId: string,
-  subcollectionName: "comments" | "likes",
+async function fetchSearchBatch(
+  postsReference: CollectionReference<DocumentData>,
+  cursor: QueryDocumentSnapshot<DocumentData> | null,
 ) {
-  const db = getFirebaseDb();
-
-  while (true) {
-    const snapshot = await getDocs(
-      query(collection(db, "posts", postId, subcollectionName), limit(200)),
-    );
-
-    if (snapshot.empty) {
-      return;
-    }
-
-    const batch = writeBatch(db);
-    snapshot.docs.forEach((documentSnapshot) => {
-      batch.delete(documentSnapshot.ref);
-    });
-    await batch.commit();
-
-    if (snapshot.size < 200) {
-      return;
-    }
-  }
+  return getDocs(
+    cursor
+      ? query(
+          postsReference,
+          orderBy("createdAt", "desc"),
+          startAfter(cursor),
+          limit(50),
+        )
+      : query(postsReference, orderBy("createdAt", "desc"), limit(50)),
+  );
 }
 
 export async function fetchFeedPage({
@@ -118,34 +111,31 @@ export async function fetchFeedPage({
   const normalizedSearch = normalizeText(search);
 
   if (normalizedSearch) {
-    const searchTokens = buildSearchKeywords(normalizedSearch).slice(0, 10);
+    const posts: ForumPost[] = [];
+    let scanCursor: QueryDocumentSnapshot<DocumentData> | null = null;
 
-    if (!searchTokens.length) {
-      return {
-        hasMore: false,
-        nextCursor: null,
-        posts: [],
-      };
+    while (true) {
+      const searchSnapshot = await fetchSearchBatch(postsReference, scanCursor);
+
+      searchSnapshot.docs
+        .map(mapPostSnapshot)
+        .filter((post): post is ForumPost => Boolean(post))
+        .filter((post) => matchesSearch(post, normalizedSearch))
+        .forEach((post) => {
+          posts.push(post);
+        });
+
+      if (searchSnapshot.size < 50) {
+        break;
+      }
+
+      scanCursor = searchSnapshot.docs.at(-1) ?? null;
     }
-
-    const searchSnapshot = await getDocs(
-      query(
-        postsReference,
-        where("searchKeywords", "array-contains-any", searchTokens),
-        limit(pageSize * 4),
-      ),
-    );
-
-    const posts = searchSnapshot.docs
-      .map(mapPostSnapshot)
-      .filter((post): post is ForumPost => Boolean(post))
-      .filter((post) => matchesSearch(post, normalizedSearch))
-      .sort(sortPostsByNewest);
 
     return {
       hasMore: false,
       nextCursor: null,
-      posts,
+      posts: posts.sort(sortPostsByNewest),
     };
   }
 
@@ -210,6 +200,7 @@ export async function createForumPost(
     },
     content: parsed.content,
     createdAt: serverTimestamp(),
+    likeCount: 0,
     searchKeywords: buildSearchKeywords(parsed.title, parsed.content),
     title: parsed.title,
     updatedAt: serverTimestamp(),
@@ -241,16 +232,20 @@ export async function updateForumPost(
 }
 
 export async function deleteForumPost(postId: string, userId: string) {
-  const db = getFirebaseDb();
-  const postReference = doc(db, "posts", postId);
-  const snapshot = await getDoc(postReference);
-  const existingPost = mapPostSnapshot(snapshot);
+  const currentUser = getFirebaseAuth().currentUser;
 
-  if (!existingPost || existingPost.author.uid !== userId) {
-    throw new Error("Tu ne peux supprimer que tes propres posts.");
+  if (!currentUser || currentUser.uid !== userId) {
+    throw new Error("Session invalide.");
   }
 
-  await deleteSubcollection(postId, "comments");
-  await deleteSubcollection(postId, "likes");
-  await deleteDoc(postReference);
+  const response = await fetch(`/api/posts/${postId}`, {
+    headers: {
+      Authorization: `Bearer ${await currentUser.getIdToken()}`,
+    },
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response));
+  }
 }
