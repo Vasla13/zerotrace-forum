@@ -113,3 +113,14 @@ export async function setAdminAccessCodeRevoked(
     throw new Error(await getResponseErrorMessage(response));
   }
 }
+
+export async function deleteAdminAccessCode(user: User, hash: string) {
+  const response = await fetch(`/api/admin/access-codes/${hash}`, {
+    headers: await buildAuthorizedHeaders(user),
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response));
+  }
+}

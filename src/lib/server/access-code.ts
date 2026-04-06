@@ -294,3 +294,24 @@ export async function setAccessCodeRevokedState(
     revokedByUid: revoked ? actorUid : null,
   });
 }
+
+export async function deleteAccessCode(hash: string) {
+  const db = getFirebaseAdminDb();
+  const ref = db.collection("accessCodes").doc(hash);
+  const snapshot = await ref.get();
+
+  if (!snapshot.exists) {
+    throw new HttpError(404, "Code d’accès introuvable.");
+  }
+
+  const data = snapshot.data() as Record<string, unknown>;
+
+  if (typeof data.usedByUid === "string" && data.usedByUid) {
+    throw new HttpError(
+      409,
+      "Ce code est encore lié à un compte. Supprime d’abord le compte ou révoque le code.",
+    );
+  }
+
+  await ref.delete();
+}

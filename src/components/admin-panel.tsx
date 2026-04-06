@@ -7,6 +7,7 @@ import { AuthGuard } from "@/components/auth-guard";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { InputShell } from "@/components/input-shell";
 import {
+  deleteAdminAccessCode,
   deleteAdminUser,
   fetchAdminAccessCodes,
   fetchAdminSession,
@@ -33,7 +34,6 @@ function AdminPanelInner() {
   const [accessCodes, setAccessCodes] = useState<AdminAccessCodeSummary[]>([]);
   const [generatedCodes, setGeneratedCodes] = useState<GeneratedAdminAccessCode[]>([]);
   const [searchInput, setSearchInput] = useState("");
-  const [countInput, setCountInput] = useState("5");
   const [noteInput, setNoteInput] = useState("");
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -219,17 +219,15 @@ function AdminPanelInner() {
       return;
     }
 
-    const count = Number.parseInt(countInput, 10);
-
     setBusyAction("codes:generate");
 
     try {
       const nextCodes = await generateAdminAccessCodes(user, {
-        count,
+        count: 1,
         note: noteInput,
       });
       setGeneratedCodes(nextCodes);
-      toast.success(`${nextCodes.length} code(s) généré(s).`);
+      toast.success("Nouveau code généré.");
       await loadAccessCodes();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -252,6 +250,32 @@ function AdminPanelInner() {
           ? "Code réactivé."
           : "Code révoqué.",
       );
+      await loadAccessCodes();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function handleDeleteCode(accessCode: AdminAccessCodeSummary) {
+    if (!user) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Supprimer le code ${accessCode.note || accessCode.fingerprint} ?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setBusyAction(`code:delete:${accessCode.hash}`);
+
+    try {
+      await deleteAdminAccessCode(user, accessCode.hash);
+      toast.success("Code supprimé.");
       await loadAccessCodes();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -399,24 +423,12 @@ function AdminPanelInner() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-[180px_minmax(0,1fr)_auto]">
-          <label className="grid gap-2">
-            <span className="forum-inline-note">quantité</span>
-            <input
-              className="forum-input"
-              inputMode="numeric"
-              value={countInput}
-              onChange={(event) => {
-                setCountInput(event.target.value);
-              }}
-            />
-          </label>
-
+        <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
           <label className="grid gap-2">
             <span className="forum-inline-note">note</span>
             <input
               className="forum-input"
-              placeholder="ex: vague avril"
+              placeholder="ex: test avril"
               value={noteInput}
               onChange={(event) => {
                 setNoteInput(event.target.value);
@@ -434,14 +446,14 @@ function AdminPanelInner() {
               className="forum-button-primary"
             >
               <KeyRound className="mr-2 h-4 w-4" />
-              {busyAction === "codes:generate" ? "Génération…" : "Générer"}
+              {busyAction === "codes:generate" ? "Création…" : "Nouveau code"}
             </button>
           </div>
         </div>
 
         {generatedCodes.length ? (
           <div className="forum-card-quiet mt-6 p-5">
-            <div className="forum-inline-note">copie ces codes maintenant</div>
+            <div className="forum-inline-note">copie ce code maintenant</div>
             <div className="mt-4 grid gap-2">
               {generatedCodes.map((code) => (
                 <code
@@ -497,10 +509,33 @@ function AdminPanelInner() {
                       onClick={() => {
                         void handleToggleCode(accessCode);
                       }}
-                      disabled={busyAction === `code:${accessCode.hash}`}
+                      disabled={
+                        busyAction === `code:${accessCode.hash}` ||
+                        busyAction === `code:delete:${accessCode.hash}`
+                      }
                       className="forum-button-ghost"
                     >
                       {accessCode.revoked ? "Réactiver" : "Révoquer"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleDeleteCode(accessCode);
+                      }}
+                      disabled={
+                        busyAction === `code:${accessCode.hash}` ||
+                        busyAction === `code:delete:${accessCode.hash}` ||
+                        Boolean(accessCode.usedByUsername)
+                      }
+                      className="forum-button-icon forum-button-icon-danger"
+                      aria-label={`Supprimer le code ${accessCode.note || accessCode.fingerprint}`}
+                      title={
+                        accessCode.usedByUsername
+                          ? "Supprime d’abord le compte lié à ce code"
+                          : "Supprimer le code"
+                      }
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>

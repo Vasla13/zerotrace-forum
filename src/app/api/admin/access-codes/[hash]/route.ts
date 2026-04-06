@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAdminUid } from "@/lib/server/admin";
-import { setAccessCodeRevokedState } from "@/lib/server/access-code";
+import { deleteAccessCode, setAccessCodeRevokedState } from "@/lib/server/access-code";
 import { HttpError, toErrorResponse } from "@/lib/server/http";
 
 export const runtime = "nodejs";
@@ -23,6 +23,22 @@ export async function PATCH(
     }
 
     await setAccessCodeRevokedState(hash, payload.revoked, actorUid);
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return toErrorResponse(error);
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: AccessCodeRouteContext,
+) {
+  try {
+    await requireAdminUid(request);
+    const { hash } = await context.params;
+
+    await deleteAccessCode(hash);
 
     return NextResponse.json({ ok: true });
   } catch (error) {
