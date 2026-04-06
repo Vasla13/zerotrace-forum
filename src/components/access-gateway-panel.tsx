@@ -3,6 +3,7 @@
 import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import clsx from "clsx";
 import { ArrowLeft, KeyRound, RefreshCw, UserRound } from "lucide-react";
 import { useForm } from "react-hook-form";
 import {
@@ -57,6 +58,8 @@ export function AccessGatewayPanel({
   });
 
   const accessCode = watch("accessCode");
+  const hasSecondaryAction = step === "username" || showObserveAction;
+
   useEffect(() => {
     if (!loading && user) {
       onAuthenticated?.();
@@ -264,7 +267,12 @@ export function AccessGatewayPanel({
             </div>
           ) : null}
 
-          <div className="forum-toolbar justify-between gap-3 pt-2">
+          <div
+            className={clsx(
+              "forum-toolbar gap-3 pt-2",
+              hasSecondaryAction ? "justify-between" : "justify-end",
+            )}
+          >
             {step === "username" ? (
               <button
                 type="button"
@@ -285,9 +293,7 @@ export function AccessGatewayPanel({
               >
                 Voir le forum
               </button>
-            ) : (
-              <span className="forum-muted text-sm">Lecture publique disponible.</span>
-            )}
+            ) : null}
 
             <button
               type="button"

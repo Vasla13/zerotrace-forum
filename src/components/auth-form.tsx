@@ -55,9 +55,6 @@ export function AuthForm({ mode }: AuthFormProps) {
             >
               Premier passage
             </Link>
-            <Link href="/" className="forum-auth-menu-link">
-              Forum public
-            </Link>
           </nav>
 
           <div className="forum-auth-layout">
