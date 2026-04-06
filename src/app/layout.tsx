@@ -23,11 +23,6 @@ export const metadata: Metadata = {
     template: "%s | NEST",
   },
   description: "Forum simple avec accès par code, posts, commentaires et profils.",
-  icons: {
-    icon: "/image.png",
-    shortcut: "/image.png",
-    apple: "/image.png",
-  },
 };
 
 export default function RootLayout({

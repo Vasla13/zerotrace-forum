@@ -8,6 +8,7 @@ import { HttpError } from "@/lib/server/http";
 import { canonicalizeAccessCode } from "@/lib/utils/access-code";
 
 export type AccessCodeRecord = {
+  code: string | null;
   createdAt: Date | null;
   createdByUid: string | null;
   fingerprint: string;
@@ -63,6 +64,7 @@ function mapAccessCodeRecord(
   }
 
   return {
+    code: typeof data.code === "string" && data.code.trim() ? data.code : null,
     createdAt: toDate(data.createdAt),
     createdByUid:
       typeof data.createdByUid === "string" ? data.createdByUid : null,
@@ -124,6 +126,7 @@ export async function syncLegacyAccessCodesToFirestore() {
       }
 
       batch.set(ref, {
+        code: null,
         createdAt: Timestamp.now(),
         createdByUid: null,
         fingerprint: hash.slice(0, 8).toUpperCase(),
@@ -253,6 +256,7 @@ export async function createAccessCodes({
     }
 
     await ref.create({
+      code,
       createdAt: Timestamp.now(),
       createdByUid,
       fingerprint: hash.slice(0, 8).toUpperCase(),

@@ -8,7 +8,9 @@ export const runtime = "nodejs";
 export async function GET(request: NextRequest) {
   try {
     await requireAdminUid(request);
-    const accessCodes = await listAccessCodeRecords();
+    const accessCodes = (await listAccessCodeRecords()).filter(
+      (code) => code.source !== "legacy-file" && code.note !== "import legacy",
+    );
     const usernames = await getUsernamesByUids(
       accessCodes.flatMap((code) => [
         code.createdByUid ?? "",
@@ -19,6 +21,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       accessCodes.map((code) => ({
+        code: code.code,
         createdAt: code.createdAt?.toISOString() ?? null,
         createdByUsername: code.createdByUid
           ? usernames.get(code.createdByUid) ?? code.createdByUid

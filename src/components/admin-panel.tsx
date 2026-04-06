@@ -2,7 +2,7 @@
 
 import { useDeferredValue, useEffect, useState } from "react";
 import type { User } from "firebase/auth";
-import { Shield, Search, Trash2, UserRound, KeyRound } from "lucide-react";
+import { Copy, KeyRound, Search, Shield, Trash2, UserRound } from "lucide-react";
 import { AuthGuard } from "@/components/auth-guard";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
@@ -227,12 +227,22 @@ function AdminPanelInner() {
         note: noteInput,
       });
       setGeneratedCodes(nextCodes);
+      setNoteInput("");
       toast.success("Nouveau code généré.");
       await loadAccessCodes();
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
       setBusyAction(null);
+    }
+  }
+
+  async function handleCopyCode(value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success("Code copié.");
+    } catch {
+      toast.error("Impossible de copier le code.");
     }
   }
 
@@ -447,14 +457,26 @@ function AdminPanelInner() {
         {generatedCodes.length ? (
           <div className="forum-card-quiet mt-6 p-5">
             <div className="forum-inline-note">copie ce code maintenant</div>
-            <div className="mt-4 grid gap-2">
+            <div className="mt-4 grid gap-3">
               {generatedCodes.map((code) => (
-                <code
+                <div
                   key={code.hash}
-                  className="rounded bg-black/30 px-3 py-2 text-sm text-[color:var(--foreground)]"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded border border-[color:var(--line)] bg-black/30 px-3 py-3"
                 >
-                  {code.code}
-                </code>
+                  <code className="text-sm text-[color:var(--foreground)]">
+                    {code.code}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleCopyCode(code.code);
+                    }}
+                    className="forum-button-ghost"
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copier
+                  </button>
+                </div>
               ))}
             </div>
           </div>
@@ -464,76 +486,103 @@ function AdminPanelInner() {
           {loadingCodes ? (
             <div className="forum-card-quiet p-5 text-sm">Chargement…</div>
           ) : accessCodes.length ? (
-            accessCodes.map((accessCode) => (
-              <article key={accessCode.hash} className="forum-card-quiet p-5">
-                <div className="forum-section-head items-start">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-white">
-                        {accessCode.note || accessCode.fingerprint}
-                      </span>
-                      {accessCode.revoked ? (
-                        <span className="forum-pill">révoqué</span>
-                      ) : (
-                        <span className="forum-pill">actif</span>
-                      )}
-                    </div>
-                    <div className="forum-meta-line mt-3">
-                      <span>id {accessCode.fingerprint}</span>
-                      <span className="forum-meta-dot" />
-                      <span>
-                        créé le{" "}
-                        {accessCode.createdAt
-                          ? formatAbsoluteDate(new Date(accessCode.createdAt))
-                          : "date inconnue"}
-                      </span>
-                      {accessCode.usedByUsername ? (
-                        <>
-                          <span className="forum-meta-dot" />
-                          <span>utilisé par {accessCode.usedByUsername}</span>
-                        </>
-                      ) : null}
-                    </div>
-                  </div>
+            accessCodes.map((accessCode) => {
+              const accessCodeValue = accessCode.code;
 
-                  <div className="forum-toolbar">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void handleToggleCode(accessCode);
-                      }}
-                      disabled={
-                        busyAction === `code:${accessCode.hash}` ||
-                        busyAction === `code:delete:${accessCode.hash}`
-                      }
-                      className="forum-button-ghost"
-                    >
-                      {accessCode.revoked ? "Réactiver" : "Révoquer"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDialogState({ kind: "delete-code", target: accessCode });
-                      }}
-                      disabled={
-                        busyAction === `code:${accessCode.hash}` ||
-                        busyAction === `code:delete:${accessCode.hash}` ||
-                        Boolean(accessCode.usedByUsername)
-                      }
-                      className="forum-button-icon forum-button-icon-danger"
-                      aria-label={`Supprimer le code ${accessCode.note || accessCode.fingerprint}`}
-                      title={
-                        accessCode.usedByUsername
-                          ? "Supprime d’abord le compte lié à ce code"
-                          : "Supprimer le code"
-                      }
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+              return (
+                <article key={accessCode.hash} className="forum-card-quiet p-5">
+                  <div className="forum-section-head items-start">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-white">
+                          {accessCode.note || accessCode.fingerprint}
+                        </span>
+                        {accessCode.revoked ? (
+                          <span className="forum-pill">révoqué</span>
+                        ) : (
+                          <span className="forum-pill">actif</span>
+                        )}
+                      </div>
+                      <div className="forum-meta-line mt-3">
+                        <span>id {accessCode.fingerprint}</span>
+                        <span className="forum-meta-dot" />
+                        <span>
+                          créé le{" "}
+                          {accessCode.createdAt
+                            ? formatAbsoluteDate(new Date(accessCode.createdAt))
+                            : "date inconnue"}
+                        </span>
+                        {accessCode.usedByUsername ? (
+                          <>
+                            <span className="forum-meta-dot" />
+                            <span>utilisé par {accessCode.usedByUsername}</span>
+                          </>
+                        ) : null}
+                      </div>
+                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                        {accessCodeValue ? (
+                          <>
+                            <code className="rounded border border-[color:var(--line)] bg-black/30 px-3 py-2 text-sm text-[color:var(--foreground)]">
+                              {accessCodeValue}
+                            </code>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void handleCopyCode(accessCodeValue);
+                              }}
+                              className="forum-button-ghost"
+                            >
+                              <Copy className="mr-2 h-4 w-4" />
+                              Copier
+                            </button>
+                          </>
+                        ) : (
+                          <span className="forum-inline-note">
+                            ancien code, non récupérable
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="forum-toolbar">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleToggleCode(accessCode);
+                        }}
+                        disabled={
+                          busyAction === `code:${accessCode.hash}` ||
+                          busyAction === `code:delete:${accessCode.hash}`
+                        }
+                        className="forum-button-ghost"
+                      >
+                        {accessCode.revoked ? "Réactiver" : "Révoquer"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDialogState({ kind: "delete-code", target: accessCode });
+                        }}
+                        disabled={
+                          busyAction === `code:${accessCode.hash}` ||
+                          busyAction === `code:delete:${accessCode.hash}` ||
+                          Boolean(accessCode.usedByUsername)
+                        }
+                        className="forum-button-icon forum-button-icon-danger"
+                        aria-label={`Supprimer le code ${accessCode.note || accessCode.fingerprint}`}
+                        title={
+                          accessCode.usedByUsername
+                            ? "Supprime d’abord le compte lié à ce code"
+                            : "Supprimer le code"
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))
+                </article>
+              );
+            })
           ) : (
             <div className="forum-card-quiet p-5 text-sm">Aucun code enregistré.</div>
           )}

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { startTransition, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Plus, UserRound } from "lucide-react";
+import { LogOut, UserRound } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { signOutForumUser } from "@/lib/data/users";
 import { getErrorMessage } from "@/lib/utils/errors";
@@ -15,14 +15,16 @@ export function Header() {
   const router = useRouter();
   const { isAdmin, profile, user } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const signalGateStorageKey = "nest.signal-gate.seen";
 
   async function handleSignOut() {
     setIsSigningOut(true);
     try {
       await signOutForumUser();
+      window.sessionStorage.removeItem(signalGateStorageKey);
       toast.success("Déconnexion effectuée.");
       startTransition(() => {
-        router.push("/");
+        router.replace("/login");
       });
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -59,10 +61,6 @@ export function Header() {
                     Admin
                   </Link>
                 ) : null}
-                <Link href="/posts/new" className="forum-button-primary">
-                  <Plus className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Publier</span>
-                </Link>
                 {profile ? (
                   <Link
                     href={`/profile/${profile.usernameLower}`}

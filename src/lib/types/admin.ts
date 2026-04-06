@@ -16,6 +16,7 @@ export type AdminUserSummary = {
 };
 
 export type AdminAccessCodeSummary = {
+  code: string | null;
   createdAt: string | null;
   createdByUsername: string | null;
   fingerprint: string;
