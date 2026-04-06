@@ -3,16 +3,22 @@ import "server-only";
 import { getFirebaseAdminAuth, getFirebaseAdminDb } from "@/lib/server/firebase-admin";
 import { HttpError } from "@/lib/server/http";
 import { normalizeUsername } from "@/lib/utils/text";
-import { profileUsernameSchema } from "@/lib/validation/profile";
+import { profileUpdateSchema } from "@/lib/validation/profile";
 
 type ForumAuthorRecord = {
+  avatarUrl: string | null;
   uid: string;
   username: string;
   usernameLower: string;
 };
 
-function buildAuthor(uid: string, username: string): ForumAuthorRecord {
+function buildAuthor(
+  uid: string,
+  username: string,
+  avatarUrl: string | null,
+): ForumAuthorRecord {
   return {
+    avatarUrl,
     uid,
     username,
     usernameLower: normalizeUsername(username),
@@ -40,13 +46,11 @@ async function updateAuthorSnapshots(
   }
 }
 
-export async function renameForumUserServer(
+export async function updateForumProfileServer(
   uid: string,
   payload: unknown,
 ) {
-  const { username } = profileUsernameSchema.parse(payload);
-  const nextUsername = username.trim();
-  const nextUsernameLower = normalizeUsername(nextUsername);
+  const values = profileUpdateSchema.parse(payload);
   const db = getFirebaseAdminDb();
   const userRef = db.collection("users").doc(uid);
 
@@ -57,9 +61,7 @@ export async function renameForumUserServer(
 
   const currentProfile = await db.runTransaction(async (transaction) => {
     const adminRef = db.collection("admins").doc(uid);
-    const nextUsernameRef = db.collection("usernames").doc(nextUsernameLower);
-    const [userSnapshot, adminSnapshot, nextUsernameSnapshot] =
-      await transaction.getAll(userRef, adminRef, nextUsernameRef);
+    const [userSnapshot, adminSnapshot] = await transaction.getAll(userRef, adminRef);
 
     if (!userSnapshot.exists) {
       throw new HttpError(404, "Profil introuvable.");
@@ -70,16 +72,27 @@ export async function renameForumUserServer(
     const currentUsernameLower = String(
       userData.usernameLower ?? normalizeUsername(currentUsername),
     );
+    const currentAvatarUrl =
+      typeof userData.avatarUrl === "string" && userData.avatarUrl.trim()
+        ? userData.avatarUrl
+        : null;
 
     if (!currentUsername || !currentUsernameLower) {
       throw new HttpError(409, "Profil incomplet. Contacte un administrateur.");
     }
 
+    const nextUsername = values.username?.trim() ?? currentUsername;
+    const nextUsernameLower = normalizeUsername(nextUsername);
+    const nextAvatarUrl =
+      values.avatarUrl === undefined ? currentAvatarUrl : values.avatarUrl;
+
     if (
       currentUsername === nextUsername &&
-      currentUsernameLower === nextUsernameLower
+      currentUsernameLower === nextUsernameLower &&
+      currentAvatarUrl === nextAvatarUrl
     ) {
       return {
+        avatarUrl: currentAvatarUrl,
         username: currentUsername,
         usernameLower: currentUsernameLower,
       };
@@ -88,6 +101,9 @@ export async function renameForumUserServer(
     const currentUsernameRef = db.collection("usernames").doc(currentUsernameLower);
 
     if (currentUsernameLower !== nextUsernameLower) {
+      const nextUsernameRef = db.collection("usernames").doc(nextUsernameLower);
+      const nextUsernameSnapshot = await transaction.get(nextUsernameRef);
+
       if (
         nextUsernameSnapshot.exists &&
         String(nextUsernameSnapshot.data()?.uid ?? "") !== uid
@@ -114,6 +130,7 @@ export async function renameForumUserServer(
     }
 
     transaction.update(userRef, {
+      avatarUrl: nextAvatarUrl,
       username: nextUsername,
       usernameLower: nextUsernameLower,
     });
@@ -130,18 +147,26 @@ export async function renameForumUserServer(
     }
 
     return {
+      avatarUrl: nextAvatarUrl,
       username: nextUsername,
       usernameLower: nextUsernameLower,
     };
   });
 
-  const nextAuthor = buildAuthor(uid, currentProfile.username);
+  const nextAuthor = buildAuthor(
+    uid,
+    currentProfile.username,
+    currentProfile.avatarUrl,
+  );
 
   await Promise.all([
     updateAuthorSnapshots(postSnapshots.docs, nextAuthor),
     updateAuthorSnapshots(commentSnapshots.docs, nextAuthor),
     getFirebaseAdminAuth()
-      .updateUser(uid, { displayName: currentProfile.username })
+      .updateUser(uid, {
+        displayName: currentProfile.username,
+        photoURL: currentProfile.avatarUrl,
+      })
       .catch(() => undefined),
   ]);
 

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Heart, MessageSquareMore, Pencil, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
+import { PostMediaGallery } from "@/components/post-media-gallery";
 import {
   createPostComment,
   deletePostComment,
@@ -248,7 +249,11 @@ export function PostPage({ postId }: PostPageProps) {
       <article className="forum-card p-6 sm:p-8">
         <div className="forum-section-head items-start">
           <div className="flex min-w-0 items-start gap-4">
-            <Avatar username={post.author.username} seed={post.author.uid} />
+            <Avatar
+              avatarUrl={post.author.avatarUrl}
+              username={post.author.username}
+              seed={post.author.uid}
+            />
             <div className="min-w-0">
               <Link
                 href={`/profile/${post.author.usernameLower}`}
@@ -321,6 +326,12 @@ export function PostPage({ postId }: PostPageProps) {
           {post.title}
         </h1>
 
+        {post.media.length ? (
+          <div className="mt-6">
+            <PostMediaGallery media={post.media} />
+          </div>
+        ) : null}
+
         <div className="forum-richtext mt-6 text-[15px] leading-8">
           {post.content}
         </div>
@@ -384,6 +395,7 @@ export function PostPage({ postId }: PostPageProps) {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar
+                        avatarUrl={comment.author.avatarUrl}
                         username={comment.author.username}
                         seed={comment.author.uid}
                         size="sm"

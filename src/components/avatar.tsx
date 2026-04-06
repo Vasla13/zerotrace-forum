@@ -1,9 +1,11 @@
 "use client";
 
 import clsx from "clsx";
+import { useState } from "react";
 import { getAvatarInitial, getAvatarPalette } from "@/lib/utils/avatar";
 
 type AvatarProps = {
+  avatarUrl?: string | null;
   username: string;
   seed?: string;
   size?: "sm" | "md" | "lg";
@@ -17,12 +19,15 @@ const sizeMap = {
 } as const;
 
 export function Avatar({
+  avatarUrl,
   username,
   seed,
   size = "md",
   className,
 }: AvatarProps) {
   const palette = getAvatarPalette(seed ?? username);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const showImage = Boolean(avatarUrl) && failedUrl !== avatarUrl;
 
   return (
     <div
@@ -37,7 +42,18 @@ export function Avatar({
         boxShadow: `0 16px 28px ${palette.shadow}`,
       }}
     >
-      {getAvatarInitial(username)}
+      {showImage ? (
+        <img
+          src={avatarUrl ?? undefined}
+          alt=""
+          className="forum-avatar-image"
+          onError={() => {
+            setFailedUrl(avatarUrl ?? null);
+          }}
+        />
+      ) : (
+        getAvatarInitial(username)
+      )}
     </div>
   );
 }

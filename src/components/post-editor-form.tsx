@@ -1,20 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PenLine, Send } from "lucide-react";
+import { ImagePlus, PenLine, Send, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
+import { PostMediaGallery } from "@/components/post-media-gallery";
 import {
+  createDraftPostId,
   createForumPost,
   subscribeToPost,
   updateForumPost,
 } from "@/lib/data/posts";
+import {
+  deleteForumStorageObjectByPath,
+  uploadForumPostMedia,
+} from "@/lib/data/storage";
 import type { ForumPost } from "@/lib/types/forum";
 import { getErrorMessage } from "@/lib/utils/errors";
-import { postSchema, type PostFormValues } from "@/lib/validation/forum";
+import {
+  getForumMediaType,
+  isImageContentType,
+  isVideoContentType,
+  MAX_POST_MEDIA_BYTES,
+  MAX_POST_MEDIA_ITEMS,
+} from "@/lib/utils/media";
+import { postFieldsSchema, type PostFormValues } from "@/lib/validation/forum";
 import { useAuth } from "@/providers/auth-provider";
 import { toast } from "sonner";
 
@@ -22,6 +35,46 @@ type PostEditorFormProps = {
   mode: "create" | "edit";
   postId?: string;
 };
+
+type DraftMediaItem =
+  | {
+      id: string;
+      kind: "existing";
+      media: ForumPost["media"][number];
+      previewUrl: string;
+      type: "image" | "video";
+    }
+  | {
+      id: string;
+      kind: "new";
+      file: File;
+      previewUrl: string;
+      type: "image" | "video";
+    };
+
+function createDraftMediaId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function buildExistingMediaItems(post: ForumPost) {
+  return post.media.map((item) => ({
+    id: `existing-${item.storagePath}`,
+    kind: "existing" as const,
+    media: item,
+    previewUrl: item.url,
+    type: item.type,
+  }));
+}
+
+function revokeDraftMediaPreview(item: DraftMediaItem) {
+  if (item.kind === "new") {
+    URL.revokeObjectURL(item.previewUrl);
+  }
+}
 
 export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
   const router = useRouter();
@@ -31,6 +84,9 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
   );
   const [loadingPost, setLoadingPost] = useState(mode === "edit");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mediaItems, setMediaItems] = useState<DraftMediaItem[]>([]);
+  const mediaInputRef = useRef<HTMLInputElement | null>(null);
+  const mediaItemsRef = useRef<DraftMediaItem[]>([]);
 
   const {
     formState: { errors },
@@ -39,7 +95,7 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
     reset,
     watch,
   } = useForm<PostFormValues>({
-    resolver: zodResolver(postSchema),
+    resolver: zodResolver(postFieldsSchema),
     defaultValues: {
       title: "",
       content: "",
@@ -48,6 +104,16 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
 
   const titleValue = watch("title");
   const contentValue = watch("content");
+
+  useEffect(() => {
+    mediaItemsRef.current = mediaItems;
+  }, [mediaItems]);
+
+  useEffect(() => {
+    return () => {
+      mediaItemsRef.current.forEach(revokeDraftMediaPreview);
+    };
+  }, []);
 
   useEffect(() => {
     if (mode !== "edit" || !postId || !configured) {
@@ -66,6 +132,10 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
             title: nextPost.title,
             content: nextPost.content,
           });
+          setMediaItems((currentItems) => {
+            currentItems.forEach(revokeDraftMediaPreview);
+            return buildExistingMediaItems(nextPost);
+          });
         }
       },
       () => {
@@ -77,6 +147,69 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
     return unsubscribe;
   }, [configured, mode, postId, reset]);
 
+  function handleOpenMediaPicker() {
+    mediaInputRef.current?.click();
+  }
+
+  function handleRemoveMedia(itemId: string) {
+    setMediaItems((currentItems) => {
+      const nextItems = currentItems.filter((item) => item.id !== itemId);
+      const removedItems = currentItems.filter((item) => item.id === itemId);
+
+      removedItems.forEach(revokeDraftMediaPreview);
+
+      return nextItems;
+    });
+  }
+
+  function handlePickedMedia(files: FileList | null) {
+    if (!files?.length) {
+      return;
+    }
+
+    const selectedFiles = Array.from(files);
+    const remainingSlots = MAX_POST_MEDIA_ITEMS - mediaItemsRef.current.length;
+
+    if (remainingSlots <= 0) {
+      toast.error(`Maximum ${MAX_POST_MEDIA_ITEMS} média(s) par post.`);
+      return;
+    }
+
+    const acceptedFiles = selectedFiles.slice(0, remainingSlots);
+
+    if (selectedFiles.length > acceptedFiles.length) {
+      toast.error(`Maximum ${MAX_POST_MEDIA_ITEMS} média(s) par post.`);
+    }
+
+    const nextItems: DraftMediaItem[] = [];
+
+    for (const file of acceptedFiles) {
+      if (!isImageContentType(file.type) && !isVideoContentType(file.type)) {
+        toast.error("Seules les images et vidéos sont autorisées.");
+        continue;
+      }
+
+      if (file.size > MAX_POST_MEDIA_BYTES) {
+        toast.error("Chaque média doit faire moins de 25 Mo.");
+        continue;
+      }
+
+      nextItems.push({
+        file,
+        id: `new-${createDraftMediaId()}`,
+        kind: "new",
+        previewUrl: URL.createObjectURL(file),
+        type: getForumMediaType(file.type),
+      });
+    }
+
+    if (!nextItems.length) {
+      return;
+    }
+
+    setMediaItems((currentItems) => [...currentItems, ...nextItems]);
+  }
+
   async function onSubmit(values: PostFormValues) {
     if (!profile || !user) {
       toast.error("Tu dois être connecté pour publier.");
@@ -84,9 +217,52 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
     }
 
     setIsSubmitting(true);
+
+    const resolvedPostId = mode === "create" ? createDraftPostId() : postId;
+
+    if (!resolvedPostId) {
+      toast.error("Identifiant de post manquant.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const keptMedia = mediaItems
+      .filter((item): item is Extract<DraftMediaItem, { kind: "existing" }> => {
+        return item.kind === "existing";
+      })
+      .map((item) => item.media);
+    const pendingUploads = mediaItems.filter(
+      (item): item is Extract<DraftMediaItem, { kind: "new" }> =>
+        item.kind === "new",
+    );
+    const removedMedia =
+      mode === "edit" && post
+        ? post.media.filter(
+            (currentItem) =>
+              !keptMedia.some(
+                (keptItem) => keptItem.storagePath === currentItem.storagePath,
+              ),
+          )
+        : [];
+    const uploadedMedia: ForumPost["media"] = [];
+
     try {
+      for (const item of pendingUploads) {
+        const [uploadedItem] = await uploadForumPostMedia(user, resolvedPostId, [
+          item.file,
+        ]);
+        uploadedMedia.push(uploadedItem);
+      }
+
+      const nextMedia = [...keptMedia, ...uploadedMedia];
+
       if (mode === "create") {
-        const createdPostId = await createForumPost(values, profile);
+        const createdPostId = await createForumPost(
+          resolvedPostId,
+          values,
+          nextMedia,
+          profile,
+        );
         toast.success("Post publié.");
         startTransition(() => {
           router.push(`/posts/${createdPostId}`);
@@ -94,16 +270,31 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
         return;
       }
 
-      if (!postId) {
-        throw new Error("Identifiant de post manquant.");
+      await updateForumPost(resolvedPostId, user.uid, values, nextMedia);
+
+      const deletionResults = await Promise.allSettled(
+        removedMedia.map((item) => deleteForumStorageObjectByPath(item.storagePath)),
+      );
+      const failedDeletionCount = deletionResults.filter(
+        (result) => result.status === "rejected",
+      ).length;
+
+      if (failedDeletionCount) {
+        toast.warning("Le post est à jour, mais un ancien média n’a pas pu être nettoyé.");
       }
 
-      await updateForumPost(postId, user.uid, values);
       toast.success("Post mis à jour.");
       startTransition(() => {
-        router.push(`/posts/${postId}`);
+        router.push(`/posts/${resolvedPostId}`);
       });
     } catch (error) {
+      if (uploadedMedia.length) {
+        await Promise.allSettled(
+          uploadedMedia.map((item) =>
+            deleteForumStorageObjectByPath(item.storagePath),
+          ),
+        );
+      }
       toast.error(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
@@ -182,6 +373,18 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-7 grid gap-5">
+          <input
+            ref={mediaInputRef}
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            className="hidden"
+            onChange={(event) => {
+              handlePickedMedia(event.target.files);
+              event.target.value = "";
+            }}
+          />
+
           <label className="grid gap-2">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-medium">Titre</span>
@@ -215,6 +418,75 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
               </span>
             ) : null}
           </label>
+
+          <section className="grid gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-medium">Médias</div>
+                <div className="forum-inline-note mt-2">
+                  Images et vidéos. {mediaItems.length}/{MAX_POST_MEDIA_ITEMS}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenMediaPicker}
+                disabled={mediaItems.length >= MAX_POST_MEDIA_ITEMS || isSubmitting}
+                className="forum-button-ghost"
+              >
+                <ImagePlus className="mr-2 h-4 w-4" />
+                Ajouter un média
+              </button>
+            </div>
+
+            {mediaItems.length ? (
+              <>
+                <div className="forum-media-upload-grid">
+                  {mediaItems.map((item) => (
+                    <div key={item.id} className="forum-media-upload-tile">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleRemoveMedia(item.id);
+                        }}
+                        className="forum-media-remove"
+                        aria-label="Retirer ce média"
+                        title="Retirer ce média"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                      <PostMediaGallery
+                        media={[
+                          item.kind === "existing"
+                            ? item.media
+                            : {
+                                storagePath: item.id,
+                                type: item.type,
+                                url: item.previewUrl,
+                              },
+                        ]}
+                        compact
+                      />
+                      <div className="forum-media-upload-meta">
+                        <span>{item.type === "video" ? "vidéo" : "image"}</span>
+                        <strong>
+                          {item.kind === "existing"
+                            ? "déjà publié"
+                            : item.file.name}
+                        </strong>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="forum-muted text-xs">
+                  4 médias max. 25 Mo max par fichier.
+                </div>
+              </>
+            ) : (
+              <div className="forum-media-upload-empty">
+                Ajoute une image ou une vidéo si le post en a besoin.
+              </div>
+            )}
+          </section>
 
           <div className="forum-divider" />
 

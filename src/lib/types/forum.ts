@@ -1,16 +1,24 @@
 import type { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 
 export type ForumAuthor = {
+  avatarUrl: string | null;
   uid: string;
   username: string;
   usernameLower: string;
 };
 
 export type ForumUserProfile = {
+  avatarUrl: string | null;
   uid: string;
   username: string;
   usernameLower: string;
   createdAt: Date | null;
+};
+
+export type ForumPostMedia = {
+  storagePath: string;
+  type: "image" | "video";
+  url: string;
 };
 
 export type ForumPost = {
@@ -19,6 +27,7 @@ export type ForumPost = {
   content: string;
   createdAt: Date | null;
   likeCount: number;
+  media: ForumPostMedia[];
   searchKeywords: string[];
   title: string;
   updatedAt: Date | null;

@@ -3,6 +3,7 @@ import "server-only";
 import { Timestamp } from "firebase-admin/firestore";
 import { getFirebaseAdminDb } from "@/lib/server/firebase-admin";
 import { HttpError } from "@/lib/server/http";
+import { deleteStoragePrefix } from "@/lib/server/storage";
 
 async function deleteCollectionInBatches(collectionPath: string, batchSize = 200) {
   const db = getFirebaseAdminDb();
@@ -44,6 +45,7 @@ export async function deleteForumPostServer(postId: string, userId: string) {
 
   await deleteCollectionInBatches(`posts/${postId}/comments`);
   await deleteCollectionInBatches(`posts/${postId}/likes`);
+  await deleteStoragePrefix(`posts/${authorUid}/${postId}/`);
   await postRef.delete();
 }
 

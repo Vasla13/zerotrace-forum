@@ -6,6 +6,7 @@ import { deleteForumPostServer } from "@/lib/server/forum-posts";
 import { getFirebaseAdminAuth, getFirebaseAdminDb } from "@/lib/server/firebase-admin";
 import { HttpError } from "@/lib/server/http";
 import { requireAuthenticatedUid } from "@/lib/server/request-auth";
+import { deleteStoragePrefix } from "@/lib/server/storage";
 import { normalizeText } from "@/lib/utils/text";
 
 type AdminUserRecord = {
@@ -409,6 +410,8 @@ export async function deleteForumUserServer(
   await db.collection("admins").doc(targetUid).delete().catch(() => undefined);
   await db.collection("usernames").doc(targetProfile.usernameLower).delete();
   await db.collection("users").doc(targetUid).delete();
+  await deleteStoragePrefix(`users/${targetUid}/`);
+  await deleteStoragePrefix(`posts/${targetUid}/`);
   await getFirebaseAdminAuth().deleteUser(targetUid).catch((error: unknown) => {
     if (
       error &&

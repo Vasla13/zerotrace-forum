@@ -96,6 +96,10 @@ async function ensureUserProfile(uid: string, values: AccessAuthValues) {
 
       return {
         created: false,
+        avatarUrl:
+          typeof data?.avatarUrl === "string" && data.avatarUrl.trim()
+            ? data.avatarUrl
+            : null,
         username,
       };
     }
@@ -116,6 +120,7 @@ async function ensureUserProfile(uid: string, values: AccessAuthValues) {
 
         if (reservedUid === uid) {
           transaction.set(userRef, {
+            avatarUrl: null,
             createdAt: usernameSnapshot.data()?.createdAt ?? createdAt,
             uid,
             username,
@@ -124,6 +129,7 @@ async function ensureUserProfile(uid: string, values: AccessAuthValues) {
 
           return {
             created: true,
+            avatarUrl: null,
             username,
           };
         }
@@ -142,6 +148,7 @@ async function ensureUserProfile(uid: string, values: AccessAuthValues) {
         usernameLower,
       });
       transaction.create(userRef, {
+        avatarUrl: null,
         createdAt,
         uid,
         username,
@@ -150,6 +157,7 @@ async function ensureUserProfile(uid: string, values: AccessAuthValues) {
 
       return {
         created: true,
+        avatarUrl: null,
         username,
       };
     }
@@ -170,6 +178,7 @@ export async function authenticateWithAccessCodeServer(payload: unknown) {
   await auth
     .updateUser(uid, {
       displayName: profile.username,
+      photoURL: profile.avatarUrl,
     })
     .catch(() => undefined);
 

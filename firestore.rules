@@ -15,8 +15,13 @@ service cloud.firestore {
 
     function validAuthor(author) {
       return author is map
-        && author.keys().hasOnly(['uid', 'username', 'usernameLower'])
+        && author.keys().hasOnly(['avatarUrl', 'uid', 'username', 'usernameLower'])
         && author.uid == request.auth.uid
+        && (
+          !('avatarUrl' in author)
+          || author.avatarUrl == null
+          || (author.avatarUrl is string && author.avatarUrl.size() <= 2000)
+        )
         && validPlainText(author.username, 3, 24)
         && author.usernameLower is string
         && author.usernameLower.matches('^[a-z0-9_]{3,24}$');
@@ -30,6 +35,27 @@ service cloud.firestore {
 
     function validLikeCount(value) {
       return value is int && value >= 0;
+    }
+
+    function validPostMediaItem(item) {
+      return item is map
+        && item.keys().hasOnly(['storagePath', 'type', 'url'])
+        && item.storagePath is string
+        && item.storagePath.size() >= 1
+        && item.storagePath.size() <= 500
+        && item.url is string
+        && item.url.size() >= 1
+        && item.url.size() <= 2000
+        && item.type in ['image', 'video'];
+    }
+
+    function validPostMedia(media) {
+      return media is list
+        && media.size() <= 4
+        && (media.size() < 1 || validPostMediaItem(media[0]))
+        && (media.size() < 2 || validPostMediaItem(media[1]))
+        && (media.size() < 3 || validPostMediaItem(media[2]))
+        && (media.size() < 4 || validPostMediaItem(media[3]));
     }
 
     match /users/{userId} {
@@ -58,6 +84,7 @@ service cloud.firestore {
           'content',
           'createdAt',
           'likeCount',
+          'media',
           'searchKeywords',
           'title',
           'updatedAt'
@@ -67,6 +94,7 @@ service cloud.firestore {
         && validPlainText(request.resource.data.content, 20, 5000)
         && validLikeCount(request.resource.data.likeCount)
         && request.resource.data.likeCount == 0
+        && validPostMedia(request.resource.data.media)
         && validSearchKeywords(request.resource.data.searchKeywords)
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
@@ -78,6 +106,7 @@ service cloud.firestore {
           'content',
           'createdAt',
           'likeCount',
+          'media',
           'searchKeywords',
           'title',
           'updatedAt'
@@ -87,6 +116,7 @@ service cloud.firestore {
         && validPlainText(request.resource.data.title, 6, 120)
         && validPlainText(request.resource.data.content, 20, 5000)
         && request.resource.data.likeCount == resource.data.likeCount
+        && validPostMedia(request.resource.data.media)
         && validSearchKeywords(request.resource.data.searchKeywords)
         && request.resource.data.updatedAt == request.time;
 

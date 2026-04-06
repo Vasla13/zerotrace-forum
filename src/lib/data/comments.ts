@@ -38,6 +38,10 @@ function mapCommentSnapshot(
   return {
     id: snapshot.id,
     author: {
+      avatarUrl:
+        typeof data.author.avatarUrl === "string" && data.author.avatarUrl.trim()
+          ? data.author.avatarUrl
+          : null,
       uid: String(data.author.uid),
       username: String(data.author.username),
       usernameLower: String(data.author.usernameLower),
@@ -77,6 +81,7 @@ export async function createPostComment(
 
   await addDoc(collection(getFirebaseDb(), "posts", postId, "comments"), {
     author: {
+      avatarUrl: profile.avatarUrl,
       uid: profile.uid,
       username: profile.username,
       usernameLower: profile.usernameLower,

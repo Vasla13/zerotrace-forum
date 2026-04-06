@@ -16,7 +16,7 @@ import type { AccessAuthValues } from "@/lib/validation/auth";
 import { accessAuthSchema } from "@/lib/validation/auth";
 import { getResponseErrorMessage } from "@/lib/utils/errors";
 import { normalizeUsername } from "@/lib/utils/text";
-import type { ProfileUsernameValues } from "@/lib/validation/profile";
+import type { ProfileUpdateValues, ProfileUsernameValues } from "@/lib/validation/profile";
 
 async function buildAuthorizedHeaders(user: User) {
   return {
@@ -48,6 +48,10 @@ function mapUserProfile(
   const data = snapshot.data();
 
   return {
+    avatarUrl:
+      typeof data.avatarUrl === "string" && data.avatarUrl.trim()
+        ? data.avatarUrl
+        : null,
     uid: String(data.uid),
     username: String(data.username),
     usernameLower: String(data.usernameLower),
@@ -92,6 +96,13 @@ export async function renameForumUser(
   user: User,
   values: ProfileUsernameValues,
 ) {
+  return updateForumProfile(user, values);
+}
+
+export async function updateForumProfile(
+  user: User,
+  values: ProfileUpdateValues,
+) {
   const response = await fetch("/api/profile", {
     body: JSON.stringify(values),
     headers: await buildAuthorizedHeaders(user),
@@ -103,6 +114,7 @@ export async function renameForumUser(
   }
 
   return (await response.json()) as {
+    avatarUrl: string | null;
     username: string;
     usernameLower: string;
   };

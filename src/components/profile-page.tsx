@@ -2,21 +2,23 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { startTransition, useEffect, useState } from "react";
-import { Plus, UserRound } from "lucide-react";
+import { startTransition, useEffect, useRef, useState } from "react";
+import { Camera, Plus, Trash2, UserRound } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { InputShell } from "@/components/input-shell";
 import { PostCard } from "@/components/post-card";
 import { fetchPostsByUser } from "@/lib/data/posts";
+import { deleteForumAvatar, uploadForumAvatar } from "@/lib/data/storage";
 import {
   getUserPostCount,
   getUserProfileByUsername,
-  renameForumUser,
+  updateForumProfile,
 } from "@/lib/data/users";
 import type { ForumPost, ForumUserProfile } from "@/lib/types/forum";
 import { formatJoinedDate } from "@/lib/utils/date";
 import { getErrorMessage } from "@/lib/utils/errors";
+import { MAX_AVATAR_BYTES } from "@/lib/utils/media";
 import { normalizeUsername } from "@/lib/utils/text";
 import { profileUsernameSchema } from "@/lib/validation/profile";
 import { useAuth } from "@/providers/auth-provider";
@@ -36,8 +38,10 @@ export function ProfilePage({ username }: ProfilePageProps) {
   const [postCount, setPostCount] = useState(0);
   const [draftUsername, setDraftUsername] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [isSavingUsername, setIsSavingUsername] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!configured) {
@@ -119,12 +123,13 @@ export function ProfilePage({ username }: ProfilePageProps) {
       const values = profileUsernameSchema.parse({
         username: draftUsername,
       });
-      const nextProfile = await renameForumUser(user, values);
+      const nextProfile = await updateForumProfile(user, values);
 
       setProfile((current) =>
         current
           ? {
               ...current,
+              avatarUrl: current.avatarUrl,
               username: nextProfile.username,
               usernameLower: nextProfile.usernameLower,
             }
@@ -151,6 +156,88 @@ export function ProfilePage({ username }: ProfilePageProps) {
       toast.error(getErrorMessage(renameError));
     } finally {
       setIsSavingUsername(false);
+    }
+  }
+
+  async function handleAvatarSelected(file: File | null) {
+    if (!user || !profile || !file) {
+      return;
+    }
+
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast.error("La photo de profil doit faire moins de 5 Mo.");
+      return;
+    }
+
+    setIsSavingAvatar(true);
+
+    try {
+      const avatarUrl = await uploadForumAvatar(user, file);
+      const nextProfile = await updateForumProfile(user, { avatarUrl });
+
+      setProfile((current) =>
+        current
+          ? {
+              ...current,
+              avatarUrl: nextProfile.avatarUrl,
+            }
+          : current,
+      );
+      setPosts((currentPosts) =>
+        currentPosts.map((post) => ({
+          ...post,
+          author: {
+            ...post.author,
+            avatarUrl: nextProfile.avatarUrl,
+          },
+        })),
+      );
+      toast.success("Photo de profil mise à jour.");
+      router.refresh();
+    } catch (avatarError) {
+      toast.error(getErrorMessage(avatarError));
+    } finally {
+      setIsSavingAvatar(false);
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = "";
+      }
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    if (!user || !profile?.avatarUrl) {
+      return;
+    }
+
+    setIsSavingAvatar(true);
+
+    try {
+      await deleteForumAvatar(user);
+      const nextProfile = await updateForumProfile(user, { avatarUrl: null });
+
+      setProfile((current) =>
+        current
+          ? {
+              ...current,
+              avatarUrl: nextProfile.avatarUrl,
+            }
+          : current,
+      );
+      setPosts((currentPosts) =>
+        currentPosts.map((post) => ({
+          ...post,
+          author: {
+            ...post.author,
+            avatarUrl: null,
+          },
+        })),
+      );
+      toast.success("Photo de profil supprimée.");
+      router.refresh();
+    } catch (avatarError) {
+      toast.error(getErrorMessage(avatarError));
+    } finally {
+      setIsSavingAvatar(false);
     }
   }
 
@@ -214,6 +301,7 @@ export function ProfilePage({ username }: ProfilePageProps) {
         <div className="forum-section-head">
           <div className="flex items-start gap-4">
             <Avatar
+              avatarUrl={profile.avatarUrl}
               username={profile.username}
               seed={profile.uid}
               size="lg"
@@ -234,6 +322,43 @@ export function ProfilePage({ username }: ProfilePageProps) {
           <div className="flex flex-wrap items-center justify-end gap-2">
             {isCurrentUser ? (
               <div className="grid w-full max-w-sm gap-3">
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(event) => {
+                    void handleAvatarSelected(event.target.files?.[0] ?? null);
+                  }}
+                />
+                <div className="forum-inline-note">photo de profil</div>
+                <div className="forum-toolbar">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      avatarInputRef.current?.click();
+                    }}
+                    disabled={isSavingAvatar}
+                    className="forum-button-ghost"
+                  >
+                    <Camera className="mr-2 h-4 w-4" />
+                    {isSavingAvatar ? "Envoi…" : profile.avatarUrl ? "Changer la photo" : "Ajouter une photo"}
+                  </button>
+                  {profile.avatarUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleRemoveAvatar();
+                      }}
+                      disabled={isSavingAvatar}
+                      className="forum-button-icon forum-button-icon-danger"
+                      aria-label="Supprimer la photo de profil"
+                      title="Supprimer la photo de profil"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
                 <div className="forum-inline-note">ton pseudo</div>
                 <InputShell
                   icon={UserRound}
@@ -261,7 +386,7 @@ export function ProfilePage({ username }: ProfilePageProps) {
                   </Link>
                 </div>
                 <div className="forum-muted text-xs">
-                  3 à 24 caractères. Lettres, chiffres, underscore.
+                  Pseudo: 3 à 24 caractères. Photo: image de moins de 5 Mo.
                 </div>
               </div>
             ) : null}

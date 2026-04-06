@@ -1,5 +1,4 @@
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
@@ -8,6 +7,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  setDoc,
   startAfter,
   updateDoc,
   where,
@@ -18,7 +18,12 @@ import {
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase/client";
-import type { FeedPage, ForumPost, ForumUserProfile } from "@/lib/types/forum";
+import type {
+  FeedPage,
+  ForumPost,
+  ForumPostMedia,
+  ForumUserProfile,
+} from "@/lib/types/forum";
 import { getResponseErrorMessage } from "@/lib/utils/errors";
 import { postSchema, type PostFormValues } from "@/lib/validation/forum";
 import { buildSearchKeywords, normalizeText } from "@/lib/utils/text";
@@ -48,6 +53,10 @@ function mapPostSnapshot(
   return {
     id: snapshot.id,
     author: {
+      avatarUrl:
+        typeof data.author.avatarUrl === "string" && data.author.avatarUrl.trim()
+          ? data.author.avatarUrl
+          : null,
       uid: String(data.author.uid),
       username: String(data.author.username),
       usernameLower: String(data.author.usernameLower),
@@ -58,6 +67,33 @@ function mapPostSnapshot(
       typeof data.likeCount === "number" && Number.isFinite(data.likeCount)
         ? data.likeCount
         : 0,
+    media: Array.isArray(data.media)
+      ? data.media
+          .map((item) => {
+            if (!item || typeof item !== "object") {
+              return null;
+            }
+
+            const type = String(item.type ?? "");
+            const url = String(item.url ?? "");
+            const storagePath = String(item.storagePath ?? "");
+
+            if (
+              (type !== "image" && type !== "video") ||
+              !url.trim() ||
+              !storagePath.trim()
+            ) {
+              return null;
+            }
+
+            return {
+              storagePath,
+              type,
+              url,
+            } satisfies ForumPostMedia;
+          })
+          .filter((item): item is ForumPostMedia => Boolean(item))
+      : [],
     searchKeywords: Array.isArray(data.searchKeywords)
       ? data.searchKeywords.map(String)
       : [],
@@ -188,12 +224,19 @@ export function subscribeToPost(
 }
 
 export async function createForumPost(
+  postId: string,
   values: PostFormValues,
+  media: ForumPostMedia[],
   profile: ForumUserProfile,
 ) {
-  const parsed = postSchema.parse(values);
-  const postReference = await addDoc(collection(getFirebaseDb(), "posts"), {
+  const parsed = postSchema.parse({
+    ...values,
+    media,
+  });
+  const postReference = doc(getFirebaseDb(), "posts", postId);
+  await setDoc(postReference, {
     author: {
+      avatarUrl: profile.avatarUrl,
       uid: profile.uid,
       username: profile.username,
       usernameLower: profile.usernameLower,
@@ -201,6 +244,7 @@ export async function createForumPost(
     content: parsed.content,
     createdAt: serverTimestamp(),
     likeCount: 0,
+    media: parsed.media,
     searchKeywords: buildSearchKeywords(parsed.title, parsed.content),
     title: parsed.title,
     updatedAt: serverTimestamp(),
@@ -213,8 +257,12 @@ export async function updateForumPost(
   postId: string,
   userId: string,
   values: PostFormValues,
+  media: ForumPostMedia[],
 ) {
-  const parsed = postSchema.parse(values);
+  const parsed = postSchema.parse({
+    ...values,
+    media,
+  });
   const postReference = doc(getFirebaseDb(), "posts", postId);
   const snapshot = await getDoc(postReference);
   const existingPost = mapPostSnapshot(snapshot);
@@ -225,10 +273,15 @@ export async function updateForumPost(
 
   await updateDoc(postReference, {
     content: parsed.content,
+    media: parsed.media,
     searchKeywords: buildSearchKeywords(parsed.title, parsed.content),
     title: parsed.title,
     updatedAt: serverTimestamp(),
   });
+}
+
+export function createDraftPostId() {
+  return doc(collection(getFirebaseDb(), "posts")).id;
 }
 
 export async function deleteForumPost(postId: string, userId: string) {

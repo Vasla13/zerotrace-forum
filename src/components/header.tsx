@@ -67,7 +67,11 @@ export function Header() {
                   href={`/profile/${profile.usernameLower}`}
                   className="forum-button-ghost gap-2"
                 >
-                  <Avatar username={profile.username} size="sm" />
+                  <Avatar
+                    avatarUrl={profile.avatarUrl}
+                    username={profile.username}
+                    size="sm"
+                  />
                   <span className="hidden sm:inline">{profile.username}</span>
                 </Link>
               ) : (
