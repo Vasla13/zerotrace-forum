@@ -99,7 +99,7 @@ export function AccessGatewayPanel({
     toast.success(
       result.created
         ? `Profil créé : ${result.username}.`
-        : `Connexion : ${result.username}.`,
+        : `Accès ouvert : ${result.username}.`,
     );
     onAuthenticated?.();
 
@@ -126,7 +126,7 @@ export function AccessGatewayPanel({
 
       applySuggestions(nextSuggestions);
       setStep("username");
-      toast.message("Premier passage détecté. Choisis maintenant ton pseudo.");
+      toast.message("Nouveau profil détecté. Choisis maintenant ton pseudo.");
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {

@@ -31,7 +31,7 @@ export function MobileBottomNav() {
   }
 
   const profileHref = profile ? `/profile/${profile.usernameLower}` : "/login";
-  const profileLabel = user ? "Profil" : "Connexion";
+  const profileLabel = user ? "Profil" : "Accès";
   const ProfileIcon = UserRound;
 
   const navItems = [

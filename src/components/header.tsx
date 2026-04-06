@@ -91,14 +91,9 @@ export function Header() {
                 </button>
               </>
             ) : (
-              <>
-                <Link href="/login" className="forum-button-ghost">
-                  Connexion
-                </Link>
-                <Link href="/register" className="forum-button-primary">
-                  Premier passage
-                </Link>
-              </>
+              <Link href="/login" className="forum-button-primary">
+                Accès
+              </Link>
             )}
           </div>
         </div>

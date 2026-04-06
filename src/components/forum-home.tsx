@@ -141,7 +141,7 @@ export function ForumHome() {
             <p className="forum-muted mt-3 max-w-2xl text-sm leading-7">
               {user && profile
                 ? `Connecté en tant que ${profile.username}.`
-                : "Lecture publique. Connexion requise pour publier et répondre."}
+                : "Lecture publique. Accès requis pour publier et répondre."}
             </p>
           </div>
 
@@ -152,14 +152,9 @@ export function ForumHome() {
                 Publier
               </Link>
             ) : (
-              <>
-                <Link href="/login" className="forum-button-primary">
-                  Connexion
-                </Link>
-                <Link href="/register" className="forum-button-ghost">
-                  Premier passage
-                </Link>
-              </>
+              <Link href="/login" className="forum-button-primary">
+                Accès
+              </Link>
             )}
           </div>
         </div>
@@ -262,7 +257,7 @@ export function ForumHome() {
                 href={user ? "/posts/new" : "/login"}
                 className="forum-button-primary"
               >
-                {user ? "Publier" : "Connexion"}
+                {user ? "Publier" : "Accès"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>

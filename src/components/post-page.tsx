@@ -370,12 +370,12 @@ export function PostPage({ postId }: PostPageProps) {
           </div>
         ) : (
           <div className="forum-card-quiet mt-6 flex flex-wrap items-center justify-between gap-4 p-5">
-            <p className="forum-muted text-sm">Connexion requise pour répondre.</p>
+            <p className="forum-muted text-sm">Accès requis pour répondre.</p>
             <Link
               href={`/login?next=${encodeURIComponent(`/posts/${postId}`)}`}
               className="forum-button-ghost"
             >
-              Connexion
+              Accès
             </Link>
           </div>
         )}
