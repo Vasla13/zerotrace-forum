@@ -4,6 +4,18 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: FIREBASE_ADMIN_PROJECT_ID
+    value: "forum-20260404"
+    availability:
+      - RUNTIME
+  - variable: FIREBASE_ADMIN_CLIENT_EMAIL
+    value: "zerotrace-admin@forum-20260404.iam.gserviceaccount.com"
+    availability:
+      - RUNTIME
+  - variable: FIREBASE_ADMIN_PRIVATE_KEY
+    secret: FIREBASE_ADMIN_PRIVATE_KEY
+    availability:
+      - RUNTIME
   - variable: FORUM_BOOTSTRAP_ADMIN_USERNAMES
     value: "trinity"
     availability:

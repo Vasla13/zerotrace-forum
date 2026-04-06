@@ -10,6 +10,24 @@ import {
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
+function getProjectIdFromFirebaseConfig() {
+  const firebaseConfig = process.env.FIREBASE_CONFIG;
+
+  if (!firebaseConfig) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(firebaseConfig) as {
+      projectId?: unknown;
+    };
+
+    return typeof parsed.projectId === "string" ? parsed.projectId : null;
+  } catch {
+    return null;
+  }
+}
+
 function getFirebaseAdminApp() {
   if (getApps().length) {
     return getApp();
@@ -17,6 +35,10 @@ function getFirebaseAdminApp() {
 
   const projectId =
     process.env.FIREBASE_ADMIN_PROJECT_ID ??
+    process.env.GOOGLE_CLOUD_PROJECT ??
+    process.env.GCLOUD_PROJECT ??
+    process.env.GCP_PROJECT ??
+    getProjectIdFromFirebaseConfig() ??
     process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(
