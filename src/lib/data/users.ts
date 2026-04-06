@@ -1,4 +1,4 @@
-import { signInWithCustomToken, signOut } from "firebase/auth";
+import { signInWithCustomToken, signOut, type User } from "firebase/auth";
 import {
   collection,
   doc,
@@ -16,6 +16,14 @@ import type { AccessAuthValues } from "@/lib/validation/auth";
 import { accessAuthSchema } from "@/lib/validation/auth";
 import { getResponseErrorMessage } from "@/lib/utils/errors";
 import { normalizeUsername } from "@/lib/utils/text";
+import type { ProfileUsernameValues } from "@/lib/validation/profile";
+
+async function buildAuthorizedHeaders(user: User) {
+  return {
+    Authorization: `Bearer ${await user.getIdToken()}`,
+    "Content-Type": "application/json",
+  };
+}
 
 function toDate(value: unknown) {
   if (
@@ -78,6 +86,26 @@ export async function authenticateWithAccessCode(values: AccessAuthValues) {
 
 export async function signOutForumUser() {
   await signOut(getFirebaseAuth());
+}
+
+export async function renameForumUser(
+  user: User,
+  values: ProfileUsernameValues,
+) {
+  const response = await fetch("/api/profile", {
+    body: JSON.stringify(values),
+    headers: await buildAuthorizedHeaders(user),
+    method: "PATCH",
+  });
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response));
+  }
+
+  return (await response.json()) as {
+    username: string;
+    usernameLower: string;
+  };
 }
 
 export function subscribeToUserProfile(

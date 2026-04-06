@@ -1,31 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { startTransition, useEffect, useState } from "react";
+import { Plus, UserRound } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
+import { InputShell } from "@/components/input-shell";
 import { PostCard } from "@/components/post-card";
 import { fetchPostsByUser } from "@/lib/data/posts";
-import { getUserPostCount, getUserProfileByUsername } from "@/lib/data/users";
+import {
+  getUserPostCount,
+  getUserProfileByUsername,
+  renameForumUser,
+} from "@/lib/data/users";
 import type { ForumPost, ForumUserProfile } from "@/lib/types/forum";
 import { formatJoinedDate } from "@/lib/utils/date";
 import { getErrorMessage } from "@/lib/utils/errors";
 import { normalizeUsername } from "@/lib/utils/text";
+import { profileUsernameSchema } from "@/lib/validation/profile";
 import { useAuth } from "@/providers/auth-provider";
+import { toast } from "sonner";
 
 type ProfilePageProps = {
   username: string;
 };
 
 export function ProfilePage({ username }: ProfilePageProps) {
-  const { configured, profile: currentProfile } = useAuth();
+  const router = useRouter();
+  const { configured, profile: currentProfile, user } = useAuth();
   const [profile, setProfile] = useState<ForumUserProfile | null | undefined>(
     undefined,
   );
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [postCount, setPostCount] = useState(0);
+  const [draftUsername, setDraftUsername] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isSavingUsername, setIsSavingUsername] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -89,6 +100,60 @@ export function ProfilePage({ username }: ProfilePageProps) {
     };
   }, [configured, username]);
 
+  useEffect(() => {
+    if (!profile) {
+      return;
+    }
+
+    setDraftUsername(profile.username);
+  }, [profile]);
+
+  async function handleRenameProfile() {
+    if (!user || !profile) {
+      return;
+    }
+
+    setIsSavingUsername(true);
+
+    try {
+      const values = profileUsernameSchema.parse({
+        username: draftUsername,
+      });
+      const nextProfile = await renameForumUser(user, values);
+
+      setProfile((current) =>
+        current
+          ? {
+              ...current,
+              username: nextProfile.username,
+              usernameLower: nextProfile.usernameLower,
+            }
+          : current,
+      );
+      setPosts((currentPosts) =>
+        currentPosts.map((post) => ({
+          ...post,
+          author: {
+            ...post.author,
+            username: nextProfile.username,
+            usernameLower: nextProfile.usernameLower,
+          },
+        })),
+      );
+      setDraftUsername(nextProfile.username);
+      toast.success("Pseudo mis à jour.");
+
+      startTransition(() => {
+        router.replace(`/profile/${nextProfile.usernameLower}`);
+        router.refresh();
+      });
+    } catch (renameError) {
+      toast.error(getErrorMessage(renameError));
+    } finally {
+      setIsSavingUsername(false);
+    }
+  }
+
   if (!configured) {
     return <ForumSetupNotice />;
   }
@@ -134,6 +199,14 @@ export function ProfilePage({ username }: ProfilePageProps) {
   }
 
   const isCurrentUser = currentProfile?.uid === profile.uid;
+  const trimmedDraftUsername = draftUsername.trim();
+  const usernameCandidate = profileUsernameSchema.safeParse({
+    username: draftUsername,
+  });
+  const canSubmitUsername =
+    usernameCandidate.success &&
+    trimmedDraftUsername !== profile.username &&
+    !isSavingUsername;
 
   return (
     <div className="forum-grid mx-auto w-full max-w-6xl">
@@ -160,10 +233,37 @@ export function ProfilePage({ username }: ProfilePageProps) {
 
           <div className="flex flex-wrap items-center justify-end gap-2">
             {isCurrentUser ? (
-              <Link href="/posts/new" className="forum-button-primary">
-                <Plus className="mr-2 h-4 w-4" />
-                Nouveau post
-              </Link>
+              <div className="grid w-full max-w-sm gap-3">
+                <div className="forum-inline-note">ton pseudo</div>
+                <InputShell
+                  icon={UserRound}
+                  value={draftUsername}
+                  maxLength={24}
+                  placeholder="Pseudo"
+                  onChange={(event) => {
+                    setDraftUsername(event.target.value);
+                  }}
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleRenameProfile();
+                    }}
+                    disabled={!canSubmitUsername}
+                    className="forum-button-ghost"
+                  >
+                    {isSavingUsername ? "Mise à jour…" : "Changer le pseudo"}
+                  </button>
+                  <Link href="/posts/new" className="forum-button-primary">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nouveau post
+                  </Link>
+                </div>
+                <div className="forum-muted text-xs">
+                  3 à 24 caractères. Lettres, chiffres, underscore.
+                </div>
+              </div>
             ) : null}
           </div>
         </div>

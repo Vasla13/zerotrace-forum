@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
-import { House, Plus, Search, UserRound } from "lucide-react";
+import { Plus, Search, UserRound } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 
 export function MobileBottomNav() {
@@ -36,12 +36,6 @@ export function MobileBottomNav() {
 
   const navItems = [
     {
-      href: "/",
-      icon: House,
-      label: "Forum",
-      active: pathname === "/" && hash !== "#feed-search",
-    },
-    {
       href: "/#feed-search",
       icon: Search,
       label: "Chercher",
@@ -72,7 +66,7 @@ export function MobileBottomNav() {
   return (
     <div className="forum-mobile-dock">
       <nav className="forum-mobile-dock-inner" aria-label="Navigation mobile">
-        {navItems.slice(0, 2).map((item) => {
+        {navItems.slice(0, 1).map((item) => {
           const Icon = item.icon;
 
           if (item.href === "/#feed-search") {
@@ -117,14 +111,14 @@ export function MobileBottomNav() {
         </Link>
 
         <Link
-          href={navItems[2].href}
+          href={navItems[1].href}
           className={clsx(
             "forum-mobile-dock-link",
-            navItems[2].active && "forum-mobile-dock-link-active",
+            navItems[1].active && "forum-mobile-dock-link-active",
           )}
         >
           <ProfileIcon className="h-4 w-4" />
-          <span>{navItems[2].label}</span>
+          <span>{navItems[1].label}</span>
         </Link>
       </nav>
     </div>
