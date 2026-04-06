@@ -18,6 +18,24 @@ type AdminUserRecord = {
   usernameLower: string;
 };
 
+function isFirestoreFailedPrecondition(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  return (
+    "code" in error &&
+    error.code === 9
+  );
+}
+
+function toIndexProvisioningError() {
+  return new HttpError(
+    503,
+    "Suppression temporairement indisponible. Les index Firestore sont en cours de création, réessaie dans quelques minutes.",
+  );
+}
+
 function toDate(value: unknown) {
   if (
     value &&
@@ -260,10 +278,20 @@ async function deleteCollectionGroupDocuments(
   value: string,
 ) {
   const db = getFirebaseAdminDb();
-  const snapshot = await db
-    .collectionGroup(collectionGroupName)
-    .where(fieldPath, "==", value)
-    .get();
+  let snapshot;
+
+  try {
+    snapshot = await db
+      .collectionGroup(collectionGroupName)
+      .where(fieldPath, "==", value)
+      .get();
+  } catch (error) {
+    if (isFirestoreFailedPrecondition(error)) {
+      throw toIndexProvisioningError();
+    }
+
+    throw error;
+  }
 
   if (snapshot.empty) {
     return;
@@ -280,10 +308,20 @@ async function deleteCollectionGroupDocuments(
 
 async function deleteUserLikes(uid: string) {
   const db = getFirebaseAdminDb();
-  const likesSnapshot = await db
-    .collectionGroup("likes")
-    .where("uid", "==", uid)
-    .get();
+  let likesSnapshot;
+
+  try {
+    likesSnapshot = await db
+      .collectionGroup("likes")
+      .where("uid", "==", uid)
+      .get();
+  } catch (error) {
+    if (isFirestoreFailedPrecondition(error)) {
+      throw toIndexProvisioningError();
+    }
+
+    throw error;
+  }
 
   if (likesSnapshot.empty) {
     return;
