@@ -4,3 +4,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: FORUM_BOOTSTRAP_ADMIN_USERNAMES
+    value: "trinity"
+    availability:
+      - RUNTIME
+  - variable: FORUM_BOOTSTRAP_ACCESS_CODES
+    secret: FORUM_BOOTSTRAP_ACCESS_CODES
+    availability:
+      - RUNTIME
