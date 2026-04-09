@@ -21,6 +21,7 @@ export function Header() {
   const lastScrollYRef = useRef(0);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const signalGateStorageKey = "nest.signal-gate.seen";
+  const hideHeader = pathname === "/login" || pathname === "/register";
 
   useEffect(() => {
     lastScrollYRef.current = window.scrollY;
@@ -106,6 +107,10 @@ export function Header() {
     } finally {
       setIsSigningOut(false);
     }
+  }
+
+  if (hideHeader) {
+    return null;
   }
 
   return (
