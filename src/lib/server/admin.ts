@@ -273,38 +273,54 @@ export async function setUserAdminRole(
   await adminRef.delete();
 }
 
-async function deleteCollectionGroupDocuments(
-  collectionGroupName: string,
-  fieldPath: string,
-  value: string,
+async function deleteDocumentSnapshots(
+  snapshots: FirebaseFirestore.QueryDocumentSnapshot[],
 ) {
-  const db = getFirebaseAdminDb();
-  let snapshot;
-
-  try {
-    snapshot = await db
-      .collectionGroup(collectionGroupName)
-      .where(fieldPath, "==", value)
-      .get();
-  } catch (error) {
-    if (isFirestoreFailedPrecondition(error)) {
-      throw toIndexProvisioningError();
-    }
-
-    throw error;
-  }
-
-  if (snapshot.empty) {
+  if (!snapshots.length) {
     return;
   }
 
-  for (let index = 0; index < snapshot.docs.length; index += 400) {
+  const db = getFirebaseAdminDb();
+
+  for (let index = 0; index < snapshots.length; index += 400) {
     const batch = db.batch();
-    snapshot.docs.slice(index, index + 400).forEach((documentSnapshot) => {
+
+    snapshots.slice(index, index + 400).forEach((documentSnapshot) => {
       batch.delete(documentSnapshot.ref);
     });
+
     await batch.commit();
   }
+}
+
+async function deleteReportsForDeletedUser(options: {
+  commentIds: string[];
+  postIds: string[];
+  reportedByUid: string;
+}) {
+  const db = getFirebaseAdminDb();
+  const reportsSnapshot = await db.collection("reports").get();
+
+  if (reportsSnapshot.empty) {
+    return;
+  }
+
+  const commentIds = new Set(options.commentIds);
+  const postIds = new Set(options.postIds);
+  const matchingReports = reportsSnapshot.docs.filter((reportSnapshot) => {
+    const data = reportSnapshot.data();
+    const commentId = String(data.commentId ?? "");
+    const postId = String(data.postId ?? "");
+    const reportedByUid = String(data.reportedByUid ?? "");
+
+    return (
+      reportedByUid === options.reportedByUid ||
+      postIds.has(postId) ||
+      (commentId ? commentIds.has(commentId) : false)
+    );
+  });
+
+  await deleteDocumentSnapshots(matchingReports);
 }
 
 async function deleteUserLikes(uid: string) {
@@ -365,8 +381,11 @@ async function deleteUserLikes(uid: string) {
 export async function deleteForumUserServer(
   actorUid: string,
   targetUid: string,
+  options?: {
+    allowSelf?: boolean;
+  },
 ) {
-  if (actorUid === targetUid) {
+  if (actorUid === targetUid && !options?.allowSelf) {
     throw new HttpError(400, "Tu ne peux pas supprimer ton propre compte.");
   }
 
@@ -377,17 +396,29 @@ export async function deleteForumUserServer(
     throw new HttpError(404, "Utilisateur introuvable.");
   }
 
-  const authoredPosts = await db
-    .collection("posts")
-    .where("author.uid", "==", targetUid)
-    .get();
+  const [authoredPosts, authoredComments] = await Promise.all([
+    db
+      .collection("posts")
+      .where("author.uid", "==", targetUid)
+      .get(),
+    db.collectionGroup("comments").where("author.uid", "==", targetUid).get(),
+  ]);
+  const authoredPostIds = authoredPosts.docs.map((postSnapshot) => postSnapshot.id);
+  const authoredCommentIds = authoredComments.docs.map(
+    (commentSnapshot) => commentSnapshot.id,
+  );
 
   for (const postSnapshot of authoredPosts.docs) {
     await deleteForumPostServer(postSnapshot.id, targetUid);
   }
 
-  await deleteCollectionGroupDocuments("comments", "author.uid", targetUid);
+  await deleteDocumentSnapshots(authoredComments.docs);
   await deleteUserLikes(targetUid);
+  await deleteReportsForDeletedUser({
+    commentIds: authoredCommentIds,
+    postIds: authoredPostIds,
+    reportedByUid: targetUid,
+  });
 
   const accessCodeSnapshots = await db
     .collection("accessCodes")

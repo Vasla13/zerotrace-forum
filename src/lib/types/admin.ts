@@ -35,3 +35,17 @@ export type GeneratedAdminAccessCode = {
   hash: string;
   note: string | null;
 };
+
+export type AdminReportSummary = {
+  commentId: string | null;
+  createdAt: string | null;
+  id: string;
+  kind: "post" | "comment";
+  postId: string;
+  postTitle: string | null;
+  previewText: string;
+  reportedByUsername: string;
+  resolved: boolean;
+  resolvedAt: string | null;
+  targetAuthorUsername: string;
+};

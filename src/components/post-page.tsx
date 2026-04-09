@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageSquareMore, Pencil, Trash2 } from "lucide-react";
+import {
+  Flag,
+  Heart,
+  MessageSquareMore,
+  Pencil,
+  Pin,
+  Trash2,
+} from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
@@ -15,10 +22,17 @@ import {
   updatePostComment,
 } from "@/lib/data/comments";
 import { subscribeToOwnLike, togglePostLike } from "@/lib/data/likes";
-import { deleteForumPost, subscribeToPost } from "@/lib/data/posts";
+import {
+  deleteForumPost,
+  setPostPinnedState,
+  subscribeToPost,
+} from "@/lib/data/posts";
+import { createForumReport } from "@/lib/data/reports";
+import { getForumChannelLabel } from "@/lib/forum/config";
 import type { ForumComment, ForumPost } from "@/lib/types/forum";
-import { formatAbsoluteDate, formatRelativeDate, formatSystemDate } from "@/lib/utils/date";
+import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
 import { getErrorMessage } from "@/lib/utils/errors";
+import { excerpt } from "@/lib/utils/text";
 import { commentSchema } from "@/lib/validation/forum";
 import { useAuth } from "@/providers/auth-provider";
 import { toast } from "sonner";
@@ -30,11 +44,13 @@ type PostPageProps = {
 type PostDialogState =
   | { kind: "delete-post" }
   | { kind: "delete-comment"; commentId: string }
+  | { kind: "report-post" }
+  | { kind: "report-comment"; comment: ForumComment }
   | null;
 
 export function PostPage({ postId }: PostPageProps) {
   const router = useRouter();
-  const { configured, loading: authLoading, profile, user } = useAuth();
+  const { configured, isAdmin, loading: authLoading, profile, user } = useAuth();
   const [post, setPost] = useState<ForumPost | null | undefined>(undefined);
   const [comments, setComments] = useState<ForumComment[]>([]);
   const [likedByUser, setLikedByUser] = useState(false);
@@ -179,6 +195,80 @@ export function PostPage({ postId }: PostPageProps) {
     }
   }
 
+  async function handleTogglePin() {
+    if (!user || !post || !isAdmin) {
+      return;
+    }
+
+    setBusyAction("post:pin");
+
+    try {
+      await setPostPinnedState(post.id, user.uid, !post.isPinned);
+      toast.success(post.isPinned ? "Post désépinglé." : "Post épinglé.");
+    } catch (nextError) {
+      toast.error(getErrorMessage(nextError));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function handleReportPost() {
+    if (!user || !post) {
+      toast.error("Connecte-toi pour signaler.");
+      startTransition(() => {
+        router.push(`/login?next=${encodeURIComponent(`/posts/${postId}`)}`);
+      });
+      return;
+    }
+
+    setBusyAction("report:post");
+
+    try {
+      await createForumReport(user, {
+        kind: "post",
+        postId: post.id,
+        postTitle: post.title || null,
+        previewText: post.title || excerpt(post.content, 240),
+        targetAuthorUsername: post.author.username,
+      });
+      toast.success("Signalement envoyé.");
+      setDialogState(null);
+    } catch (nextError) {
+      toast.error(getErrorMessage(nextError));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function handleReportComment(comment: ForumComment) {
+    if (!user) {
+      toast.error("Connecte-toi pour signaler.");
+      startTransition(() => {
+        router.push(`/login?next=${encodeURIComponent(`/posts/${postId}`)}`);
+      });
+      return;
+    }
+
+    setBusyAction(`report:comment:${comment.id}`);
+
+    try {
+      await createForumReport(user, {
+        commentId: comment.id,
+        kind: "comment",
+        postId,
+        postTitle: post?.title || null,
+        previewText: excerpt(comment.content, 240),
+        targetAuthorUsername: comment.author.username,
+      });
+      toast.success("Signalement envoyé.");
+      setDialogState(null);
+    } catch (nextError) {
+      toast.error(getErrorMessage(nextError));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   async function handleSaveEditedComment(commentId: string) {
     if (!user) {
       return;
@@ -245,7 +335,7 @@ export function PostPage({ postId }: PostPageProps) {
     <div className="mx-auto grid w-full max-w-5xl gap-6">
       <article className="forum-card p-6 sm:p-8">
         <div className="forum-section-head items-start">
-          <div className="flex min-w-0 items-start gap-4">
+          <div className="flex min-w-0 items-center gap-3">
             <Avatar
               avatarUrl={post.author.avatarUrl}
               username={post.author.username}
@@ -254,16 +344,25 @@ export function PostPage({ postId }: PostPageProps) {
             <div className="min-w-0">
               <Link
                 href={`/profile/${post.author.usernameLower}`}
-                className="block truncate text-sm font-semibold uppercase tracking-[0.14em] hover:text-[color:var(--accent-dark)]"
+                className="block truncate text-sm font-semibold hover:text-[color:var(--accent-dark)]"
               >
                 {post.author.username}
               </Link>
-              <div className="forum-meta-line mt-1 text-xs">
+              <div className="forum-meta-line mt-1 flex-wrap text-xs">
                 <span title={formatAbsoluteDate(post.createdAt)}>
                   {formatRelativeDate(post.createdAt)}
                 </span>
                 <span className="forum-meta-dot" />
-                <span>{formatSystemDate(post.createdAt)}</span>
+                <span>{getForumChannelLabel(post.channel)}</span>
+                {post.isPinned ? (
+                  <>
+                    <span className="forum-meta-dot" />
+                    <span className="inline-flex items-center gap-1 text-[color:var(--accent-hot)]">
+                      <Pin className="h-3.5 w-3.5" />
+                      Épinglé
+                    </span>
+                  </>
+                ) : null}
                 {wasEdited ? (
                   <>
                     <span className="forum-meta-dot" />
@@ -274,8 +373,37 @@ export function PostPage({ postId }: PostPageProps) {
             </div>
           </div>
 
-          {isAuthor ? (
-            <div className="forum-toolbar">
+          <div className="forum-toolbar">
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void handleTogglePin();
+                }}
+                disabled={busyAction === "post:pin"}
+                className="forum-button-icon"
+                title={post.isPinned ? "Désépingler" : "Épingler"}
+                aria-label={post.isPinned ? "Désépingler le post" : "Épingler le post"}
+              >
+                <Pin className="h-4 w-4" />
+              </button>
+            ) : null}
+            {!isAuthor ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setDialogState({ kind: "report-post" });
+                }}
+                disabled={busyAction === "report:post"}
+                className="forum-button-icon"
+                title="Signaler"
+                aria-label="Signaler le post"
+              >
+                <Flag className="h-4 w-4" />
+              </button>
+            ) : null}
+            {isAuthor ? (
+              <>
               <Link
                 href={`/posts/${post.id}/edit`}
                 className="forum-button-icon"
@@ -296,8 +424,9 @@ export function PostPage({ postId }: PostPageProps) {
               >
                 <Trash2 className="h-4 w-4" />
               </button>
-            </div>
-          ) : null}
+              </>
+            ) : null}
+          </div>
         </div>
 
         <div className="forum-toolbar mt-5">
@@ -321,9 +450,15 @@ export function PostPage({ postId }: PostPageProps) {
           </div>
         </div>
 
-        <h1 className="forum-title mt-6 text-4xl leading-tight sm:text-5xl">
-          {post.title}
-        </h1>
+        {post.title ? (
+          <h1 className="forum-title mt-6 text-4xl leading-tight sm:text-5xl">
+            {post.title}
+          </h1>
+        ) : (
+          <div className="mt-6">
+            <span className="forum-pill">Carte média</span>
+          </div>
+        )}
 
         {post.media.length ? (
           <div className="mt-6">
@@ -331,9 +466,11 @@ export function PostPage({ postId }: PostPageProps) {
           </div>
         ) : null}
 
-        <div className="forum-richtext mt-6 text-[15px] leading-8">
-          {post.content}
-        </div>
+        {post.content ? (
+          <div className="forum-richtext mt-6 text-[15px] leading-8">
+            {post.content}
+          </div>
+        ) : null}
       </article>
 
       <section className="forum-card p-6 sm:p-8">
@@ -406,17 +543,31 @@ export function PostPage({ postId }: PostPageProps) {
                         >
                           {comment.author.username}
                         </Link>
-                        <p
-                          className="forum-muted text-xs"
-                          title={formatAbsoluteDate(comment.createdAt)}
-                        >
-                          {formatRelativeDate(comment.createdAt)}
-                        </p>
+                        <div className="forum-meta-line text-xs">
+                          <span title={formatAbsoluteDate(comment.createdAt)}>
+                            {formatRelativeDate(comment.createdAt)}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    {isCommentAuthor ? (
-                      <div className="forum-toolbar">
+                    <div className="forum-toolbar">
+                      {!isCommentAuthor ? (
+                        <button
+                          type="button"
+                          className="forum-button-icon"
+                          onClick={() => {
+                            setDialogState({ kind: "report-comment", comment });
+                          }}
+                          disabled={busyAction === `report:comment:${comment.id}`}
+                          title="Signaler"
+                          aria-label="Signaler le commentaire"
+                        >
+                          <Flag className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      {isCommentAuthor ? (
+                        <>
                         <button
                           type="button"
                           className="forum-button-icon"
@@ -444,8 +595,9 @@ export function PostPage({ postId }: PostPageProps) {
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                      </div>
-                    ) : null}
+                        </>
+                      ) : null}
+                    </div>
                   </div>
 
                   {isEditing ? (
@@ -504,22 +656,44 @@ export function PostPage({ postId }: PostPageProps) {
         title={
           dialogState?.kind === "delete-post"
             ? "Supprimer ce post ?"
-            : "Supprimer ce commentaire ?"
+            : dialogState?.kind === "delete-comment"
+              ? "Supprimer ce commentaire ?"
+              : dialogState?.kind === "report-post"
+                ? "Signaler ce post ?"
+                : "Signaler ce commentaire ?"
         }
         description={
           dialogState?.kind === "delete-post"
             ? "Ce post sera retiré du forum avec ses réponses et ses interactions."
             : dialogState?.kind === "delete-comment"
               ? "Ce commentaire sera retiré définitivement de la discussion."
+              : dialogState?.kind === "report-post"
+                ? "Le post sera envoyé dans la file de signalements admin."
+                : dialogState?.kind === "report-comment"
+                  ? "Le commentaire sera envoyé dans la file de signalements admin."
               : ""
         }
-        confirmLabel="Supprimer"
-        tone="danger"
+        confirmLabel={
+          dialogState?.kind === "report-post" ||
+          dialogState?.kind === "report-comment"
+            ? "Signaler"
+            : "Supprimer"
+        }
+        tone={
+          dialogState?.kind === "report-post" ||
+          dialogState?.kind === "report-comment"
+            ? "default"
+            : "danger"
+        }
         busy={
           dialogState?.kind === "delete-post"
             ? busyAction === "post:delete"
             : dialogState?.kind === "delete-comment"
               ? busyAction === `comment:delete:${dialogState.commentId}`
+              : dialogState?.kind === "report-post"
+                ? busyAction === "report:post"
+                : dialogState?.kind === "report-comment"
+                  ? busyAction === `report:comment:${dialogState.comment.id}`
               : false
         }
         onClose={() => {
@@ -535,6 +709,16 @@ export function PostPage({ postId }: PostPageProps) {
 
           if (dialogState?.kind === "delete-comment") {
             void handleDeleteComment(dialogState.commentId);
+            return;
+          }
+
+          if (dialogState?.kind === "report-post") {
+            void handleReportPost();
+            return;
+          }
+
+          if (dialogState?.kind === "report-comment") {
+            void handleReportComment(dialogState.comment);
           }
         }}
       />

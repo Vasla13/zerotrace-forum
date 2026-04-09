@@ -46,6 +46,53 @@ async function updateAuthorSnapshots(
   }
 }
 
+async function updateReportsForProfileChange(options: {
+  currentUsername: string;
+  nextUsername: string;
+  uid: string;
+}) {
+  const db = getFirebaseAdminDb();
+  const [reportedBySnapshots, targetAuthorSnapshots] = await Promise.all([
+    db.collection("reports").where("reportedByUid", "==", options.uid).get(),
+    options.currentUsername !== options.nextUsername
+      ? db
+          .collection("reports")
+          .where("targetAuthorUsername", "==", options.currentUsername)
+          .get()
+      : Promise.resolve(null),
+  ]);
+
+  for (let index = 0; index < reportedBySnapshots.docs.length; index += 400) {
+    const batch = db.batch();
+
+    reportedBySnapshots.docs.slice(index, index + 400).forEach((reportSnapshot) => {
+      batch.update(reportSnapshot.ref, {
+        reportedByUsername: options.nextUsername,
+      });
+    });
+
+    await batch.commit();
+  }
+
+  if (!targetAuthorSnapshots) {
+    return;
+  }
+
+  for (let index = 0; index < targetAuthorSnapshots.docs.length; index += 400) {
+    const batch = db.batch();
+
+    targetAuthorSnapshots.docs
+      .slice(index, index + 400)
+      .forEach((reportSnapshot) => {
+        batch.update(reportSnapshot.ref, {
+          targetAuthorUsername: options.nextUsername,
+        });
+      });
+
+    await batch.commit();
+  }
+}
+
 export async function updateForumProfileServer(
   uid: string,
   payload: unknown,
@@ -93,6 +140,7 @@ export async function updateForumProfileServer(
     ) {
       return {
         avatarUrl: currentAvatarUrl,
+        previousUsername: currentUsername,
         username: currentUsername,
         usernameLower: currentUsernameLower,
       };
@@ -148,6 +196,7 @@ export async function updateForumProfileServer(
 
     return {
       avatarUrl: nextAvatarUrl,
+      previousUsername: currentUsername,
       username: nextUsername,
       usernameLower: nextUsernameLower,
     };
@@ -162,6 +211,11 @@ export async function updateForumProfileServer(
   await Promise.all([
     updateAuthorSnapshots(postSnapshots.docs, nextAuthor),
     updateAuthorSnapshots(commentSnapshots.docs, nextAuthor),
+    updateReportsForProfileChange({
+      currentUsername: currentProfile.previousUsername,
+      nextUsername: currentProfile.username,
+      uid,
+    }),
     getFirebaseAdminAuth()
       .updateUser(uid, {
         displayName: currentProfile.username,

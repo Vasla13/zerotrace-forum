@@ -9,6 +9,12 @@ import { useForm } from "react-hook-form";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { PostMediaGallery } from "@/components/post-media-gallery";
 import {
+  forumChannelLabels,
+  forumChannelValues,
+  forumPostDisplayModeLabels,
+  forumPostDisplayModeValues,
+} from "@/lib/forum/config";
+import {
   createDraftPostId,
   createForumPost,
   subscribeToPost,
@@ -93,15 +99,20 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
     handleSubmit,
     register,
     reset,
+    setValue,
     watch,
   } = useForm<PostFormValues>({
     resolver: zodResolver(postFieldsSchema),
     defaultValues: {
+      channel: "general",
       title: "",
       content: "",
+      displayMode: "standard",
     },
   });
 
+  const displayModeValue = watch("displayMode");
+  const channelValue = watch("channel");
   const titleValue = watch("title");
   const contentValue = watch("content");
 
@@ -129,8 +140,10 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
         setLoadingPost(false);
         if (nextPost) {
           reset({
+            channel: nextPost.channel,
             title: nextPost.title,
             content: nextPost.content,
+            displayMode: nextPost.displayMode,
           });
           setMediaItems((currentItems) => {
             currentItems.forEach(revokeDraftMediaPreview);
@@ -367,7 +380,7 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
               {mode === "create" ? "Nouveau post" : "Modifier le post"}
             </h1>
             <p className="forum-muted mt-3 text-sm">
-              Un titre clair et un message utile.
+              Choisis un canal, puis poste un message ou une carte média.
             </p>
           </div>
         </div>
@@ -385,15 +398,71 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
             }}
           />
 
+          <section className="grid gap-3">
+            <div className="text-sm font-medium">Format</div>
+            <div className="flex flex-wrap gap-2">
+              {forumPostDisplayModeValues.map((displayMode) => (
+                <button
+                  key={displayMode}
+                  type="button"
+                  onClick={() => {
+                    setValue("displayMode", displayMode, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
+                  className={
+                    displayModeValue === displayMode
+                      ? "forum-button-primary"
+                      : "forum-button-ghost"
+                  }
+                >
+                  {forumPostDisplayModeLabels[displayMode]}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="grid gap-3">
+            <div className="text-sm font-medium">Canal</div>
+            <div className="flex flex-wrap gap-2">
+              {forumChannelValues.map((channel) => (
+                <button
+                  key={channel}
+                  type="button"
+                  onClick={() => {
+                    setValue("channel", channel, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
+                  className={
+                    channelValue === channel
+                      ? "forum-button-secondary"
+                      : "forum-button-ghost"
+                  }
+                >
+                  {forumChannelLabels[channel]}
+                </button>
+              ))}
+            </div>
+          </section>
+
           <label className="grid gap-2">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium">Titre</span>
+              <span className="text-sm font-medium">
+                {displayModeValue === "media" ? "Titre optionnel" : "Titre"}
+              </span>
               <span className="forum-inline-note">{titleValue.length}/120</span>
             </div>
             <input
               {...register("title")}
               className="forum-input"
-              placeholder="Exemple : Nouveau patch Biotechnica"
+              placeholder={
+                displayModeValue === "media"
+                  ? "Optionnel : nom rapide ou tag"
+                  : "Exemple : Nouveau patch Biotechnica"
+              }
             />
             {errors.title ? (
               <span className="text-xs text-[color:var(--danger)]">
@@ -404,13 +473,25 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
 
           <label className="grid gap-2">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium">Contenu</span>
-              <span className="forum-inline-note">{contentValue.length}/5000</span>
+              <span className="text-sm font-medium">
+                {displayModeValue === "media" ? "Légende" : "Contenu"}
+              </span>
+              <span className="forum-inline-note">
+                {contentValue.length}/{displayModeValue === "media" ? 280 : 5000}
+              </span>
             </div>
             <textarea
               {...register("content")}
-              className="forum-textarea min-h-72"
-              placeholder="Écris ton message."
+              className={
+                displayModeValue === "media"
+                  ? "forum-textarea min-h-32"
+                  : "forum-textarea min-h-72"
+              }
+              placeholder={
+                displayModeValue === "media"
+                  ? "Écris une légende courte."
+                  : "Écris ton message."
+              }
             />
             {errors.content ? (
               <span className="text-xs text-[color:var(--danger)]">
@@ -483,7 +564,9 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
               </>
             ) : (
               <div className="forum-media-upload-empty">
-                Ajoute une image ou une vidéo si le post en a besoin.
+                {displayModeValue === "media"
+                  ? "Ajoute au moins une image ou une vidéo."
+                  : "Ajoute une image ou une vidéo si le post en a besoin."}
               </div>
             )}
           </section>
@@ -492,7 +575,7 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
 
           <div className="forum-toolbar justify-between">
             <span className="forum-muted text-sm">
-              Public.
+              Canal public : {forumChannelLabels[channelValue]}.
             </span>
             <div className="forum-toolbar">
               <Link

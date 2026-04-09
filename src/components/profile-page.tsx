@@ -380,6 +380,9 @@ export function ProfilePage({ username }: ProfilePageProps) {
                   >
                     {isSavingUsername ? "Mise à jour…" : "Changer le pseudo"}
                   </button>
+                  <Link href="/settings" className="forum-button-ghost">
+                    Paramètres
+                  </Link>
                   <Link href="/posts/new" className="forum-button-primary">
                     <Plus className="mr-2 h-4 w-4" />
                     Nouveau post

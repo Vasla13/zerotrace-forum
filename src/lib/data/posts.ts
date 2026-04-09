@@ -18,8 +18,10 @@ import {
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase/client";
+import type { ForumChannel, ForumFeedFilter } from "@/lib/forum/config";
 import type {
   FeedPage,
+  FeedQuery,
   ForumPost,
   ForumPostMedia,
   ForumUserProfile,
@@ -27,6 +29,15 @@ import type {
 import { getResponseErrorMessage } from "@/lib/utils/errors";
 import { postSchema, type PostFormValues } from "@/lib/validation/forum";
 import { buildSearchKeywords, normalizeText } from "@/lib/utils/text";
+
+const forumChannels = new Set<ForumChannel>([
+  "general",
+  "fuites",
+  "matos",
+  "terrain",
+]);
+
+const forumDisplayModes = new Set(["standard", "media"]);
 
 function toDate(value: unknown) {
   if (
@@ -49,6 +60,35 @@ function mapPostSnapshot(
   }
 
   const data = snapshot.data();
+  const media = Array.isArray(data.media)
+    ? data.media
+        .map((item) => {
+          if (!item || typeof item !== "object") {
+            return null;
+          }
+
+          const type = String(item.type ?? "");
+          const url = String(item.url ?? "");
+          const storagePath = String(item.storagePath ?? "");
+
+          if (
+            (type !== "image" && type !== "video") ||
+            !url.trim() ||
+            !storagePath.trim()
+          ) {
+            return null;
+          }
+
+          return {
+            storagePath,
+            type,
+            url,
+          } satisfies ForumPostMedia;
+        })
+        .filter((item): item is ForumPostMedia => Boolean(item))
+    : [];
+  const channelValue = String(data.channel ?? "");
+  const displayModeValue = String(data.displayMode ?? "");
 
   return {
     id: snapshot.id,
@@ -61,39 +101,20 @@ function mapPostSnapshot(
       username: String(data.author.username),
       usernameLower: String(data.author.usernameLower),
     },
+    channel: forumChannels.has(channelValue as ForumChannel)
+      ? (channelValue as ForumChannel)
+      : "general",
     content: String(data.content),
     createdAt: toDate(data.createdAt),
+    displayMode: forumDisplayModes.has(displayModeValue)
+      ? (displayModeValue as ForumPost["displayMode"])
+      : "standard",
     likeCount:
       typeof data.likeCount === "number" && Number.isFinite(data.likeCount)
         ? data.likeCount
         : 0,
-    media: Array.isArray(data.media)
-      ? data.media
-          .map((item) => {
-            if (!item || typeof item !== "object") {
-              return null;
-            }
-
-            const type = String(item.type ?? "");
-            const url = String(item.url ?? "");
-            const storagePath = String(item.storagePath ?? "");
-
-            if (
-              (type !== "image" && type !== "video") ||
-              !url.trim() ||
-              !storagePath.trim()
-            ) {
-              return null;
-            }
-
-            return {
-              storagePath,
-              type,
-              url,
-            } satisfies ForumPostMedia;
-          })
-          .filter((item): item is ForumPostMedia => Boolean(item))
-      : [],
+    isPinned: Boolean(data.isPinned),
+    media,
     searchKeywords: Array.isArray(data.searchKeywords)
       ? data.searchKeywords.map(String)
       : [],
@@ -108,6 +129,14 @@ function sortPostsByNewest(firstPost: ForumPost, secondPost: ForumPost) {
   );
 }
 
+function sortPostsByPopularity(firstPost: ForumPost, secondPost: ForumPost) {
+  if (secondPost.likeCount !== firstPost.likeCount) {
+    return secondPost.likeCount - firstPost.likeCount;
+  }
+
+  return sortPostsByNewest(firstPost, secondPost);
+}
+
 function matchesSearch(post: ForumPost, search: string) {
   const normalizedQuery = normalizeText(search);
   const normalizedContent = normalizeText(`${post.title} ${post.content}`);
@@ -117,7 +146,23 @@ function matchesSearch(post: ForumPost, search: string) {
     .every((term) => normalizedContent.includes(term));
 }
 
-async function fetchSearchBatch(
+function matchesChannel(post: ForumPost, channel: FeedQuery["channel"]) {
+  return channel === undefined || channel === "all" || post.channel === channel;
+}
+
+function matchesFeedFilter(post: ForumPost, filter: ForumFeedFilter) {
+  if (filter === "media") {
+    return post.media.length > 0;
+  }
+
+  return true;
+}
+
+function sortPosts(posts: ForumPost[], filter: ForumFeedFilter) {
+  return posts.sort(filter === "popular" ? sortPostsByPopularity : sortPostsByNewest);
+}
+
+async function fetchPostsBatch(
   postsReference: CollectionReference<DocumentData>,
   cursor: QueryDocumentSnapshot<DocumentData> | null,
 ) {
@@ -135,27 +180,27 @@ async function fetchSearchBatch(
 
 export async function fetchFeedPage({
   cursor = null,
+  channel = "all",
+  filter = "recent",
   pageSize = 8,
   search = "",
-}: {
-  cursor?: QueryDocumentSnapshot<DocumentData> | null;
-  pageSize?: number;
-  search?: string;
-}): Promise<FeedPage> {
+}: FeedQuery = {}): Promise<FeedPage> {
   const db = getFirebaseDb();
   const postsReference = collection(db, "posts");
   const normalizedSearch = normalizeText(search);
 
-  if (normalizedSearch) {
+  if (normalizedSearch || filter !== "recent" || channel !== "all") {
     const posts: ForumPost[] = [];
     let scanCursor: QueryDocumentSnapshot<DocumentData> | null = null;
 
     while (true) {
-      const searchSnapshot = await fetchSearchBatch(postsReference, scanCursor);
+      const searchSnapshot = await fetchPostsBatch(postsReference, scanCursor);
 
       searchSnapshot.docs
         .map(mapPostSnapshot)
         .filter((post): post is ForumPost => Boolean(post))
+        .filter((post) => matchesChannel(post, channel))
+        .filter((post) => matchesFeedFilter(post, filter))
         .filter((post) => matchesSearch(post, normalizedSearch))
         .forEach((post) => {
           posts.push(post);
@@ -171,7 +216,7 @@ export async function fetchFeedPage({
     return {
       hasMore: false,
       nextCursor: null,
-      posts: posts.sort(sortPostsByNewest),
+      posts: sortPosts(posts, filter),
     };
   }
 
@@ -193,6 +238,34 @@ export async function fetchFeedPage({
       .map(mapPostSnapshot)
       .filter((post): post is ForumPost => Boolean(post)),
   };
+}
+
+export async function fetchPinnedPost(channel: FeedQuery["channel"] = "all") {
+  const db = getFirebaseDb();
+  const postsReference = collection(db, "posts");
+  const posts: ForumPost[] = [];
+  let scanCursor: QueryDocumentSnapshot<DocumentData> | null = null;
+
+  while (true) {
+    const snapshot = await fetchPostsBatch(postsReference, scanCursor);
+
+    snapshot.docs
+      .map(mapPostSnapshot)
+      .filter((post): post is ForumPost => Boolean(post))
+      .filter((post) => post.isPinned)
+      .filter((post) => matchesChannel(post, channel))
+      .forEach((post) => {
+        posts.push(post);
+      });
+
+    if (snapshot.size < 50) {
+      break;
+    }
+
+    scanCursor = snapshot.docs.at(-1) ?? null;
+  }
+
+  return posts.sort(sortPostsByNewest)[0] ?? null;
 }
 
 export async function fetchPostsByUser(uid: string, pageSize = 12) {
@@ -241,11 +314,20 @@ export async function createForumPost(
       username: profile.username,
       usernameLower: profile.usernameLower,
     },
+    channel: parsed.channel,
     content: parsed.content,
     createdAt: serverTimestamp(),
+    displayMode: parsed.displayMode,
+    hasMedia: parsed.media.length > 0,
+    isPinned: false,
     likeCount: 0,
     media: parsed.media,
-    searchKeywords: buildSearchKeywords(parsed.title, parsed.content),
+    mediaCount: parsed.media.length,
+    searchKeywords: buildSearchKeywords(
+      parsed.channel,
+      parsed.title,
+      parsed.content,
+    ),
     title: parsed.title,
     updatedAt: serverTimestamp(),
   });
@@ -272,9 +354,17 @@ export async function updateForumPost(
   }
 
   await updateDoc(postReference, {
+    channel: parsed.channel,
     content: parsed.content,
+    displayMode: parsed.displayMode,
+    hasMedia: parsed.media.length > 0,
     media: parsed.media,
-    searchKeywords: buildSearchKeywords(parsed.title, parsed.content),
+    mediaCount: parsed.media.length,
+    searchKeywords: buildSearchKeywords(
+      parsed.channel,
+      parsed.title,
+      parsed.content,
+    ),
     title: parsed.title,
     updatedAt: serverTimestamp(),
   });
@@ -296,6 +386,31 @@ export async function deleteForumPost(postId: string, userId: string) {
       Authorization: `Bearer ${await currentUser.getIdToken()}`,
     },
     method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response));
+  }
+}
+
+export async function setPostPinnedState(
+  postId: string,
+  userId: string,
+  isPinned: boolean,
+) {
+  const currentUser = getFirebaseAuth().currentUser;
+
+  if (!currentUser || currentUser.uid !== userId) {
+    throw new Error("Session invalide.");
+  }
+
+  const response = await fetch(`/api/posts/${postId}`, {
+    body: JSON.stringify({ isPinned }),
+    headers: {
+      Authorization: `Bearer ${await currentUser.getIdToken()}`,
+      "Content-Type": "application/json",
+    },
+    method: "PATCH",
   });
 
   if (!response.ok) {

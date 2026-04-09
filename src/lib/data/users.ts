@@ -142,6 +142,17 @@ export async function updateForumProfile(
   };
 }
 
+export async function deleteForumProfile(user: User) {
+  const response = await fetch("/api/profile", {
+    headers: await buildAuthorizedHeaders(user),
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response));
+  }
+}
+
 export function subscribeToUserProfile(
   uid: string,
   onData: (profile: ForumUserProfile | null) => void,

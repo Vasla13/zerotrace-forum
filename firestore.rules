@@ -29,7 +29,6 @@ service cloud.firestore {
 
     function validSearchKeywords(values) {
       return values is list
-        && values.size() >= 1
         && values.size() <= 120;
     }
 
@@ -58,6 +57,28 @@ service cloud.firestore {
         && (media.size() < 4 || validPostMediaItem(media[3]));
     }
 
+    function validChannel(value) {
+      return value in ['general', 'fuites', 'matos', 'terrain'];
+    }
+
+    function validDisplayMode(value) {
+      return value in ['standard', 'media'];
+    }
+
+    function validMediaFlags(hasMedia, mediaCount, media) {
+      return hasMedia is bool
+        && mediaCount is int
+        && mediaCount == media.size()
+        && hasMedia == (mediaCount > 0);
+    }
+
+    function validPostBody(title, content, displayMode) {
+      return displayMode == 'standard'
+        ? validPlainText(title, 6, 120) && validPlainText(content, 20, 5000)
+        : (title is string && title.size() <= 120)
+          && validPlainText(content, 2, 280);
+    }
+
     match /users/{userId} {
       allow read: if true;
       allow create, update, delete: if false;
@@ -76,26 +97,46 @@ service cloud.firestore {
       allow read, create, update, delete: if false;
     }
 
+    match /reports/{reportId} {
+      allow read, create, update, delete: if false;
+    }
+
     match /posts/{postId} {
       allow read: if true;
       allow create: if isSignedIn()
         && request.resource.data.keys().hasOnly([
           'author',
+          'channel',
           'content',
           'createdAt',
+          'displayMode',
+          'hasMedia',
+          'isPinned',
           'likeCount',
           'media',
+          'mediaCount',
           'searchKeywords',
           'title',
           'updatedAt'
         ])
         && validAuthor(request.resource.data.author)
-        && validPlainText(request.resource.data.title, 6, 120)
-        && validPlainText(request.resource.data.content, 20, 5000)
+        && validChannel(request.resource.data.channel)
+        && validDisplayMode(request.resource.data.displayMode)
+        && validPostBody(
+          request.resource.data.title,
+          request.resource.data.content,
+          request.resource.data.displayMode
+        )
         && validLikeCount(request.resource.data.likeCount)
         && request.resource.data.likeCount == 0
         && validPostMedia(request.resource.data.media)
+        && validMediaFlags(
+          request.resource.data.hasMedia,
+          request.resource.data.mediaCount,
+          request.resource.data.media
+        )
         && validSearchKeywords(request.resource.data.searchKeywords)
+        && request.resource.data.isPinned == false
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
 
@@ -103,21 +144,37 @@ service cloud.firestore {
         && resource.data.author.uid == request.auth.uid
         && request.resource.data.keys().hasOnly([
           'author',
+          'channel',
           'content',
           'createdAt',
+          'displayMode',
+          'hasMedia',
+          'isPinned',
           'likeCount',
           'media',
+          'mediaCount',
           'searchKeywords',
           'title',
           'updatedAt'
         ])
         && request.resource.data.author == resource.data.author
         && request.resource.data.createdAt == resource.data.createdAt
-        && validPlainText(request.resource.data.title, 6, 120)
-        && validPlainText(request.resource.data.content, 20, 5000)
+        && validChannel(request.resource.data.channel)
+        && validDisplayMode(request.resource.data.displayMode)
+        && validPostBody(
+          request.resource.data.title,
+          request.resource.data.content,
+          request.resource.data.displayMode
+        )
         && request.resource.data.likeCount == resource.data.likeCount
         && validPostMedia(request.resource.data.media)
+        && validMediaFlags(
+          request.resource.data.hasMedia,
+          request.resource.data.mediaCount,
+          request.resource.data.media
+        )
         && validSearchKeywords(request.resource.data.searchKeywords)
+        && request.resource.data.isPinned == resource.data.isPinned
         && request.resource.data.updatedAt == request.time;
 
       allow delete: if false;

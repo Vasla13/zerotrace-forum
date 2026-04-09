@@ -1,4 +1,9 @@
 import type { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import type {
+  ForumChannel,
+  ForumFeedFilter,
+  ForumPostDisplayMode,
+} from "@/lib/forum/config";
 
 export type ForumAuthor = {
   avatarUrl: string | null;
@@ -24,9 +29,12 @@ export type ForumPostMedia = {
 export type ForumPost = {
   id: string;
   author: ForumAuthor;
+  channel: ForumChannel;
   content: string;
   createdAt: Date | null;
+  displayMode: ForumPostDisplayMode;
   likeCount: number;
+  isPinned: boolean;
   media: ForumPostMedia[];
   searchKeywords: string[];
   title: string;
@@ -46,6 +54,16 @@ export type FeedPage = {
   hasMore: boolean;
   nextCursor: QueryDocumentSnapshot<DocumentData> | null;
   posts: ForumPost[];
+};
+
+export type FeedChannelFilter = ForumChannel | "all";
+
+export type FeedQuery = {
+  channel?: FeedChannelFilter;
+  cursor?: QueryDocumentSnapshot<DocumentData> | null;
+  filter?: ForumFeedFilter;
+  pageSize?: number;
+  search?: string;
 };
 
 export type LikeState = {

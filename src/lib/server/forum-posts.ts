@@ -49,6 +49,24 @@ export async function deleteForumPostServer(postId: string, userId: string) {
   await postRef.delete();
 }
 
+export async function setForumPostPinnedStateServer(
+  postId: string,
+  isPinned: boolean,
+) {
+  const db = getFirebaseAdminDb();
+  const postRef = db.collection("posts").doc(postId);
+  const postSnapshot = await postRef.get();
+
+  if (!postSnapshot.exists) {
+    throw new HttpError(404, "Post introuvable.");
+  }
+
+  await postRef.update({
+    isPinned,
+    updatedAt: Timestamp.now(),
+  });
+}
+
 export async function togglePostLikeServer(postId: string, userId: string) {
   const db = getFirebaseAdminDb();
   const postRef = db.collection("posts").doc(postId);

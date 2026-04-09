@@ -1,6 +1,7 @@
 import type { User } from "firebase/auth";
 import type {
   AdminAccessCodeSummary,
+  AdminReportSummary,
   AdminSession,
   AdminUserSummary,
   GeneratedAdminAccessCode,
@@ -133,6 +134,46 @@ export async function setAdminAccessCodeRevoked(
 
 export async function deleteAdminAccessCode(user: User, hash: string) {
   const response = await fetch(`/api/admin/access-codes/${hash}`, {
+    headers: await buildAuthorizedHeaders(user),
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response));
+  }
+}
+
+export async function fetchAdminReports(user: User) {
+  const response = await fetch("/api/admin/reports", {
+    headers: await buildAuthorizedHeaders(user),
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response));
+  }
+
+  return (await response.json()) as AdminReportSummary[];
+}
+
+export async function setAdminReportResolved(
+  user: User,
+  reportId: string,
+  resolved: boolean,
+) {
+  const response = await fetch(`/api/admin/reports/${reportId}`, {
+    body: JSON.stringify({ resolved }),
+    headers: await buildAuthorizedHeaders(user),
+    method: "PATCH",
+  });
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response));
+  }
+}
+
+export async function deleteAdminReport(user: User, reportId: string) {
+  const response = await fetch(`/api/admin/reports/${reportId}`, {
     headers: await buildAuthorizedHeaders(user),
     method: "DELETE",
   });
