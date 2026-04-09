@@ -9,7 +9,6 @@ import {
   Pin,
   Plus,
   Search,
-  Settings2,
   X,
 } from "lucide-react";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
@@ -173,10 +172,6 @@ export function ForumHome() {
               </p>
             </div>
             <div className="forum-toolbar">
-              <Link href="/settings" className="forum-button-ghost">
-                <Settings2 className="mr-2 h-4 w-4" />
-                Paramètres
-              </Link>
               <Link href="/posts/new" className="forum-button-primary">
                 <Plus className="mr-2 h-4 w-4" />
                 Publier

@@ -21,9 +21,7 @@ import { toast } from "sonner";
 type AccessGatewayPanelProps = {
   targetAfterAuth?: string;
   className?: string;
-  showObserveAction?: boolean;
   onAuthenticated?: () => void;
-  onObservePublic?: () => void;
 };
 
 type GatewayStep = "code" | "username";
@@ -31,9 +29,7 @@ type GatewayStep = "code" | "username";
 export function AccessGatewayPanel({
   targetAfterAuth = "/",
   className,
-  showObserveAction = false,
   onAuthenticated,
-  onObservePublic,
 }: AccessGatewayPanelProps) {
   const router = useRouter();
   const { configured, loading, user } = useAuth();
@@ -58,7 +54,7 @@ export function AccessGatewayPanel({
   });
 
   const accessCode = watch("accessCode");
-  const hasSecondaryAction = step === "username" || showObserveAction;
+  const hasSecondaryAction = step === "username";
 
   useEffect(() => {
     if (!loading && user) {
@@ -284,14 +280,6 @@ export function AccessGatewayPanel({
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Changer le code
-              </button>
-            ) : showObserveAction ? (
-              <button
-                type="button"
-                onClick={onObservePublic}
-                className="forum-button-secondary"
-              >
-                Voir le forum
               </button>
             ) : null}
 

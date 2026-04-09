@@ -429,10 +429,18 @@ input:-webkit-autofill:focus {
   border-bottom: 1px solid rgba(0, 255, 156, 0.16);
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(18px);
+  will-change: transform, opacity;
   transition:
     opacity 240ms ease,
     transform 260ms ease,
     visibility 260ms ease;
+}
+
+.forum-header-hidden {
+  opacity: 0;
+  transform: translateY(calc(-100% - 1rem));
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .forum-header-banner {
@@ -1668,10 +1676,6 @@ body[data-gate-active="true"] .forum-mobile-dock {
   .forum-gate-access-mark {
     width: 3.5rem;
     height: 3.5rem;
-  }
-
-  .forum-header {
-    position: relative;
   }
 
   .forum-header-banner {

@@ -194,9 +194,7 @@ export function SignalGate({ children }: SignalGateProps) {
             <div className="forum-gate-access">
               <AccessGatewayPanel
                 targetAfterAuth="/"
-                showObserveAction
                 onAuthenticated={dismissGate}
-                onObservePublic={dismissGate}
               />
             </div>
           </div>

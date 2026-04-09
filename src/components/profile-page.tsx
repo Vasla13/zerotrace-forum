@@ -3,16 +3,19 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
-import { Camera, Plus, Trash2, UserRound } from "lucide-react";
+import { Camera, Plus, ShieldAlert, Trash2, UserRound } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { InputShell } from "@/components/input-shell";
 import { PostCard } from "@/components/post-card";
 import { fetchPostsByUser } from "@/lib/data/posts";
 import { deleteForumAvatar, uploadForumAvatar } from "@/lib/data/storage";
 import {
+  deleteForumProfile,
   getUserPostCount,
   getUserProfileByUsername,
+  signOutForumUser,
   updateForumProfile,
 } from "@/lib/data/users";
 import type { ForumPost, ForumUserProfile } from "@/lib/types/forum";
@@ -40,6 +43,8 @@ export function ProfilePage({ username }: ProfilePageProps) {
   const [loading, setLoading] = useState(true);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [isSavingUsername, setIsSavingUsername] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -241,6 +246,29 @@ export function ProfilePage({ username }: ProfilePageProps) {
     }
   }
 
+  async function handleDeleteAccount() {
+    if (!user || !isCurrentUser) {
+      return;
+    }
+
+    setIsDeletingAccount(true);
+
+    try {
+      await deleteForumProfile(user);
+      window.sessionStorage.removeItem("nest.signal-gate.seen");
+      await signOutForumUser().catch(() => undefined);
+      toast.success("Compte supprimé.");
+      startTransition(() => {
+        router.replace("/login");
+      });
+    } catch (deleteError) {
+      toast.error(getErrorMessage(deleteError));
+    } finally {
+      setIsDeletingAccount(false);
+      setDeleteDialogOpen(false);
+    }
+  }
+
   if (!configured) {
     return <ForumSetupNotice />;
   }
@@ -380,9 +408,6 @@ export function ProfilePage({ username }: ProfilePageProps) {
                   >
                     {isSavingUsername ? "Mise à jour…" : "Changer le pseudo"}
                   </button>
-                  <Link href="/settings" className="forum-button-ghost">
-                    Paramètres
-                  </Link>
                   <Link href="/posts/new" className="forum-button-primary">
                     <Plus className="mr-2 h-4 w-4" />
                     Nouveau post
@@ -396,6 +421,36 @@ export function ProfilePage({ username }: ProfilePageProps) {
           </div>
         </div>
       </section>
+
+      {isCurrentUser ? (
+        <section className="forum-card p-6 sm:p-7">
+          <div className="forum-section-head items-start">
+            <div>
+              <div className="forum-pill">Zone sensible</div>
+              <h2 className="forum-title mt-4 text-3xl sm:text-4xl">
+                Gestion du compte
+              </h2>
+              <p className="forum-muted mt-3 max-w-2xl text-sm leading-7">
+                Depuis ce profil, tu peux changer ton pseudo, ton avatar, publier,
+                ou supprimer ton compte.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={() => {
+                setDeleteDialogOpen(true);
+              }}
+              className="forum-button-danger-solid"
+            >
+              <ShieldAlert className="mr-2 h-4 w-4" />
+              Supprimer mon compte
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       <section className="forum-card p-6 sm:p-7">
         <div className="forum-section-head">
@@ -427,6 +482,23 @@ export function ProfilePage({ username }: ProfilePageProps) {
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="Supprimer ton compte ?"
+        description="Tout ton contenu sera retiré du forum. Cette action est définitive."
+        confirmLabel="Supprimer le compte"
+        tone="danger"
+        busy={isDeletingAccount}
+        onClose={() => {
+          if (!isDeletingAccount) {
+            setDeleteDialogOpen(false);
+          }
+        }}
+        onConfirm={() => {
+          void handleDeleteAccount();
+        }}
+      />
     </div>
   );
 }
