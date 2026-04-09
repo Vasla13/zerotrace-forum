@@ -18,11 +18,35 @@ const cyberBrush = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://zerotrace-forum.web.app"),
   title: {
-    default: "NEST",
+    default: "NEST // Réseau clandestin 2035",
     template: "%s | NEST",
   },
-  description: "Forum simple avec accès par code, posts, commentaires et profils.",
+  applicationName: "NEST",
+  description: "Réseau clandestin de 2035. Fuites, terrain, matos. Accès par code.",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: "https://zerotrace-forum.web.app",
+    siteName: "NEST",
+    title: "NEST // Réseau clandestin 2035",
+    description: "Réseau clandestin de 2035. Fuites, terrain, matos. Accès par code.",
+    images: [
+      {
+        url: "/image.png",
+        width: 1200,
+        height: 630,
+        alt: "NEST",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NEST // Réseau clandestin 2035",
+    description: "Réseau clandestin de 2035. Fuites, terrain, matos. Accès par code.",
+    images: ["/image.png"],
+  },
 };
 
 export default function RootLayout({
