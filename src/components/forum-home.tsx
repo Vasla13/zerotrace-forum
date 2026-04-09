@@ -27,7 +27,7 @@ import { getErrorMessage } from "@/lib/utils/errors";
 import { useAuth } from "@/providers/auth-provider";
 
 export function ForumHome() {
-  const { configured, profile, user } = useAuth();
+  const { configured, user } = useAuth();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchInput, setSearchInput] = useState("");
   const [activeFilter, setActiveFilter] = useState<ForumFeedFilter>("recent");
@@ -162,44 +162,30 @@ export function ForumHome() {
 
   return (
     <div className="forum-grid w-full">
-      {user && profile ? (
-        <section className="forum-card p-4 sm:p-5">
-          <div className="forum-section-head items-center">
-            <div>
-              <div className="forum-inline-note">session active</div>
-              <p className="mt-2 text-sm text-white">
-                Connecté en tant que <strong>{profile.username}</strong>.
-              </p>
-            </div>
-            <div className="forum-toolbar">
-              <Link href="/posts/new" className="forum-button-primary">
-                <Plus className="mr-2 h-4 w-4" />
-                Publier
-              </Link>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
       <section className="forum-card p-6 sm:p-7">
         <div className="forum-section-head">
           <div>
             <span className="forum-pill">Feed</span>
             <h1 className="forum-title mt-4 text-4xl sm:text-5xl">NEST</h1>
             <p className="forum-muted mt-3 max-w-2xl text-sm leading-7">
-              {user && profile
+              {user
                 ? "Canal actif. Trie le flux, change de canal, publie vite."
                 : "Lecture publique. Accès requis pour publier et répondre."}
             </p>
           </div>
 
-          {!user ? (
-            <div className="forum-toolbar">
+          <div className="forum-toolbar">
+            {user ? (
+              <Link href="/posts/new" className="forum-button-primary">
+                <Plus className="mr-2 h-4 w-4" />
+                Publier
+              </Link>
+            ) : (
               <Link href="/login" className="forum-button-primary">
                 Accès
               </Link>
-            </div>
-          ) : null}
+            )}
+          </div>
         </div>
 
         <div className="mt-6 max-w-2xl">
