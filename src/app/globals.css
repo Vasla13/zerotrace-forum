@@ -1407,11 +1407,12 @@ input:-webkit-autofill:focus {
 
 .forum-auth-shell {
   position: relative;
+  isolation: isolate;
 }
 
 .forum-auth-console {
   display: grid;
-  gap: 1rem;
+  gap: 1.75rem;
 }
 
 .forum-auth-menu {
@@ -1451,7 +1452,129 @@ input:-webkit-autofill:focus {
 
 .forum-auth-layout {
   display: grid;
+  justify-items: center;
+}
+
+.forum-auth-stage {
+  position: relative;
+  display: grid;
+  gap: 2rem;
+  overflow: hidden;
+  border: 1px solid rgba(0, 255, 156, 0.12);
+  background:
+    radial-gradient(circle at 50% 18%, rgba(0, 255, 156, 0.12), transparent 20%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.34)),
+    linear-gradient(90deg, rgba(0, 255, 156, 0.05) 1px, transparent 1px),
+    linear-gradient(rgba(0, 255, 156, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(1, 8, 6, 0.96), rgba(0, 0, 0, 0.9));
+  background-size: auto, auto, 28px 28px, 28px 28px, auto;
+  padding: clamp(1.35rem, 4vw, 2.4rem);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 36px 120px rgba(0, 0, 0, 0.56),
+    0 0 52px rgba(0, 255, 156, 0.08);
+}
+
+.forum-auth-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(0, 255, 156, 0.12), transparent 16%),
+    linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.03) 42%, transparent 62%);
+  opacity: 0.9;
+  pointer-events: none;
+  animation: forumAuthSweep 8s linear infinite;
+}
+
+.forum-auth-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.028) 0, rgba(255, 255, 255, 0.028) 1px, transparent 1px, transparent 4px);
+  mix-blend-mode: screen;
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.forum-auth-glow {
+  position: absolute;
+  top: 12%;
+  height: 18rem;
+  width: 18rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(0, 255, 156, 0.14), transparent 72%);
+  filter: blur(18px);
+  opacity: 0.72;
+  pointer-events: none;
+  animation: forumAuthFloat 8s ease-in-out infinite;
+}
+
+.forum-auth-glow-left {
+  left: -4rem;
+}
+
+.forum-auth-glow-right {
+  right: -4rem;
+  animation-delay: -4s;
+}
+
+.forum-auth-brand {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+}
+
+.forum-auth-brand-frame {
+  display: grid;
+  justify-items: center;
   gap: 1rem;
+  width: min(100%, 34rem);
+}
+
+.forum-auth-brand-line {
+  display: block;
+  height: 1px;
+  width: min(100%, 30rem);
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 156, 0.08) 14%, rgba(0, 255, 156, 0.5) 50%, rgba(0, 255, 156, 0.08) 86%, transparent 100%);
+}
+
+.forum-auth-brand-core {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(13rem, 32vw, 20rem);
+  aspect-ratio: 1.14 / 1;
+  padding: clamp(1rem, 2.8vw, 1.9rem);
+  background:
+    radial-gradient(circle at 50% 34%, rgba(0, 255, 156, 0.18), transparent 58%),
+    linear-gradient(180deg, rgba(1, 9, 6, 0.96), rgba(0, 0, 0, 0.88));
+  border: 1px solid rgba(0, 255, 156, 0.18);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 56px rgba(0, 255, 156, 0.12);
+  animation: forumGatePulse 4.8s ease-in-out infinite;
+}
+
+.forum-auth-brand-core::before {
+  content: "";
+  position: absolute;
+  inset: 0.9rem;
+  border: 1px solid rgba(0, 255, 156, 0.08);
+  pointer-events: none;
+}
+
+.forum-auth-brand-image {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter:
+    brightness(1.18)
+    contrast(1.14)
+    saturate(1.08)
+    drop-shadow(0 0 32px rgba(0, 255, 156, 0.18));
 }
 
 .forum-post-card {
@@ -1470,36 +1593,100 @@ input:-webkit-autofill:focus {
 }
 
 .forum-auth-card {
+  position: relative;
+  overflow: hidden;
+  width: min(100%, 42rem);
   background:
+    radial-gradient(circle at 50% 0%, rgba(0, 255, 156, 0.14), transparent 26%),
     linear-gradient(180deg, rgba(2, 12, 9, 0.96), rgba(0, 4, 3, 0.94)),
     linear-gradient(135deg, rgba(0, 255, 156, 0.08), transparent 42%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 32px 110px rgba(0, 0, 0, 0.56),
+    0 0 44px rgba(0, 255, 156, 0.08);
+}
+
+.forum-auth-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.02) 46%, transparent 64%);
+  opacity: 0.9;
+  pointer-events: none;
+  animation: forumAuthSweep 10s linear infinite reverse;
 }
 
 .forum-access-panel {
   position: relative;
   display: grid;
-  gap: 0.5rem;
+  gap: 0.85rem;
+}
+
+.forum-access-panel-login {
+  gap: 1rem;
 }
 
 .forum-access-main {
   position: relative;
   display: grid;
-  gap: 0.5rem;
-  border: 1px solid rgba(0, 255, 156, 0.14);
+  gap: 0.8rem;
+  overflow: hidden;
+  border: 1px solid rgba(0, 255, 156, 0.16);
   background:
-    linear-gradient(180deg, rgba(2, 11, 8, 0.96), rgba(1, 6, 5, 0.94)),
+    radial-gradient(circle at 50% 0%, rgba(0, 255, 156, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(2, 11, 8, 0.98), rgba(1, 6, 5, 0.95)),
     linear-gradient(135deg, rgba(0, 255, 156, 0.06), transparent 42%);
-  padding: 1.25rem;
+  padding: clamp(1.2rem, 3vw, 1.8rem);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.04),
     0 0 26px rgba(0, 255, 156, 0.08);
 }
 
+.forum-access-main::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(0, 255, 156, 0.03) 1px, transparent 1px),
+    linear-gradient(rgba(0, 255, 156, 0.025) 1px, transparent 1px);
+  background-size: 26px 26px;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.forum-access-main::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0.2rem;
+  background: linear-gradient(180deg, rgba(0, 255, 156, 0) 0%, rgba(0, 255, 156, 0.8) 45%, rgba(0, 255, 156, 0) 100%);
+  box-shadow: 0 0 24px rgba(0, 255, 156, 0.2);
+  opacity: 0.56;
+  animation: forumAuthRail 2.8s linear infinite;
+}
+
+.forum-access-head-rails {
+  display: flex;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+}
+
+.forum-access-head-rails span {
+  display: block;
+  height: 0.28rem;
+  flex: 0 0 2.6rem;
+  background: linear-gradient(90deg, rgba(0, 255, 156, 0.16), rgba(140, 254, 203, 0.92));
+  box-shadow: 0 0 16px rgba(0, 255, 156, 0.14);
+}
+
 .forum-access-username-stage {
   display: grid;
   gap: 1rem;
+  margin-top: 0.35rem;
   border-top: 1px solid rgba(0, 255, 156, 0.1);
-  padding-top: 1rem;
+  padding-top: 1.1rem;
+  background: linear-gradient(180deg, rgba(0, 255, 156, 0.03), transparent 88%);
 }
 
 .forum-access-suggestions-grid {
@@ -1517,9 +1704,10 @@ input:-webkit-autofill:focus {
 .forum-code-preview {
   min-height: 1.25rem;
   color: rgba(140, 255, 201, 0.8);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
+  text-shadow: 0 0 16px rgba(0, 255, 156, 0.12);
 }
 
 .forum-access-suggestions {
@@ -1561,6 +1749,28 @@ input:-webkit-autofill:focus {
     linear-gradient(180deg, rgba(0, 0, 0, 0.985), rgba(0, 0, 0, 1));
   backdrop-filter: blur(18px);
   overflow: hidden;
+}
+
+.forum-gate-aura {
+  position: absolute;
+  top: 16%;
+  height: 22rem;
+  width: 22rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(0, 255, 156, 0.15), transparent 72%);
+  filter: blur(18px);
+  opacity: 0.78;
+  pointer-events: none;
+  animation: forumGateAura 7.2s ease-in-out infinite;
+}
+
+.forum-gate-aura-left {
+  left: -5rem;
+}
+
+.forum-gate-aura-right {
+  right: -5rem;
+  animation-delay: -3.6s;
 }
 
 .forum-modal-backdrop {
@@ -1609,6 +1819,7 @@ input:-webkit-autofill:focus {
     radial-gradient(circle at center, transparent 22%, rgba(0, 0, 0, 0.2) 58%, rgba(0, 0, 0, 0.84) 100%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.02), transparent 36%, rgba(0, 255, 156, 0.06) 100%);
   pointer-events: none;
+  animation: forumAuthSweep 16s linear infinite;
 }
 
 .forum-gate-curtain {
@@ -1641,7 +1852,8 @@ input:-webkit-autofill:focus {
 
 .forum-gate-terminal-cinematic {
   display: grid;
-  gap: 1.6rem;
+  gap: 1.9rem;
+  overflow: hidden;
   border: 1px solid rgba(0, 255, 156, 0.16);
   background:
     radial-gradient(circle at 50% 22%, rgba(0, 255, 156, 0.12), transparent 24%),
@@ -1654,17 +1866,41 @@ input:-webkit-autofill:focus {
     0 40px 120px rgba(0, 0, 0, 0.68);
 }
 
+.forum-gate-terminal-cinematic::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.04) 46%, transparent 66%);
+  opacity: 0.8;
+  pointer-events: none;
+  animation: forumAuthSweep 9s linear infinite;
+}
+
 .forum-gate-brand {
   display: grid;
   justify-items: center;
-  gap: 1rem;
+  gap: 1.15rem;
   text-align: center;
+}
+
+.forum-gate-brand-rails {
+  display: flex;
+  gap: 0.65rem;
+}
+
+.forum-gate-brand-rails span {
+  display: block;
+  height: 0.34rem;
+  width: clamp(2.8rem, 8vw, 4.6rem);
+  background: linear-gradient(90deg, rgba(0, 255, 156, 0.18), rgba(140, 254, 203, 0.96));
+  box-shadow: 0 0 18px rgba(0, 255, 156, 0.14);
 }
 
 .forum-gate-brandmark {
   display: grid;
   place-items: center;
-  width: clamp(8rem, 18vw, 11rem);
+  width: clamp(12rem, 24vw, 17rem);
   aspect-ratio: 1;
   border: 1px solid rgba(0, 255, 156, 0.18);
   background:
@@ -1699,10 +1935,10 @@ input:-webkit-autofill:focus {
 
 .forum-gate-lines {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.75rem;
   justify-items: center;
   text-align: center;
-  font-size: clamp(0.92rem, 2vw, 1.12rem);
+  font-size: clamp(0.96rem, 2vw, 1.18rem);
   letter-spacing: 0.26em;
   text-transform: uppercase;
 }
@@ -1711,6 +1947,7 @@ input:-webkit-autofill:focus {
   margin: 0;
   min-height: 1.6em;
   color: rgba(238, 246, 239, 0.96);
+  text-shadow: 0 0 20px rgba(0, 255, 156, 0.08);
   animation: forumGateRise 380ms ease;
 }
 
@@ -1762,29 +1999,45 @@ input:-webkit-autofill:focus {
   position: relative;
   z-index: 2;
   display: grid;
-  gap: 1rem;
-  width: min(100%, 56rem);
+  gap: 1.5rem;
+  width: min(100%, 58rem);
 }
 
 .forum-gate-access-brand {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.9rem;
+  min-height: clamp(6rem, 16vw, 9rem);
+}
+
+.forum-gate-access-pulse {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: clamp(10rem, 24vw, 16rem);
+  height: clamp(10rem, 24vw, 16rem);
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(0, 255, 156, 0.2), transparent 70%);
+  filter: blur(18px);
+  opacity: 0.8;
+  transform: translate(-50%, -50%);
+  animation: forumGateAura 5.6s ease-in-out infinite;
 }
 
 .forum-gate-access-mark {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 4.2rem;
-  height: 4.2rem;
+  width: clamp(7rem, 16vw, 10rem);
+  height: clamp(7rem, 16vw, 10rem);
   border: 1px solid rgba(0, 255, 156, 0.18);
   background:
     radial-gradient(circle at 50% 35%, rgba(0, 255, 156, 0.18), transparent 58%),
     linear-gradient(180deg, rgba(1, 9, 6, 0.94), rgba(0, 0, 0, 0.84));
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 0 36px rgba(0, 255, 156, 0.12);
+    0 0 46px rgba(0, 255, 156, 0.14);
+  animation: forumGatePulse 4.6s ease-in-out infinite;
 }
 
 .forum-gate-access {
@@ -1833,6 +2086,57 @@ body[data-gate-active="true"] .forum-mobile-dock {
 
   75% {
     opacity: 0.7;
+  }
+}
+
+@keyframes forumAuthSweep {
+  0% {
+    transform: translateX(-22%);
+  }
+
+  100% {
+    transform: translateX(22%);
+  }
+}
+
+@keyframes forumAuthFloat {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(0, 0.8rem, 0) scale(1.06);
+  }
+}
+
+@keyframes forumAuthRail {
+  0% {
+    transform: translateY(-18%);
+    opacity: 0;
+  }
+
+  12%,
+  82% {
+    opacity: 0.64;
+  }
+
+  100% {
+    transform: translateY(118%);
+    opacity: 0;
+  }
+}
+
+@keyframes forumGateAura {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.72;
+  }
+
+  50% {
+    transform: translate3d(0, 0.8rem, 0) scale(1.08);
+    opacity: 0.92;
   }
 }
 
@@ -1917,6 +2221,20 @@ body[data-gate-active="true"] .forum-mobile-dock {
     padding: 1.25rem;
   }
 
+  .forum-auth-stage {
+    gap: 1.4rem;
+    padding: 1rem;
+  }
+
+  .forum-auth-brand-frame {
+    gap: 0.8rem;
+  }
+
+  .forum-auth-brand-core {
+    width: min(78vw, 17rem);
+    padding: 0.95rem;
+  }
+
   .forum-auth-menu-link {
     flex: 1 1 calc(50% - 0.3rem);
   }
@@ -1925,9 +2243,21 @@ body[data-gate-active="true"] .forum-mobile-dock {
     padding: 1rem;
   }
 
+  .forum-access-head-rails {
+    margin-bottom: 0.8rem;
+  }
+
+  .forum-access-head-rails span {
+    flex-basis: 2rem;
+  }
+
   .forum-gate-terminal-cinematic {
     gap: 1.25rem;
     padding: 1.25rem;
+  }
+
+  .forum-gate-brandmark {
+    width: min(58vw, 13rem);
   }
 
   .forum-gate-lines {
@@ -1935,12 +2265,12 @@ body[data-gate-active="true"] .forum-mobile-dock {
   }
 
   .forum-gate-access-brand {
-    gap: 0.7rem;
+    min-height: 5.25rem;
   }
 
   .forum-gate-access-mark {
-    width: 3.5rem;
-    height: 3.5rem;
+    width: 5.8rem;
+    height: 5.8rem;
   }
 
   .forum-header-banner {

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Image from "next/image";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AccessGatewayPanel } from "@/components/access-gateway-panel";
@@ -25,19 +25,38 @@ export function AuthForm() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 items-center justify-center">
+    <div className="mx-auto flex w-full max-w-7xl flex-1 items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
       <div className="forum-auth-shell w-full">
         <div className="forum-auth-console">
-          <nav className="forum-auth-menu" aria-label="Entrée">
-            <Link href="/login" className="forum-auth-menu-link forum-auth-menu-link-active">
-              Accès
-            </Link>
-          </nav>
+          <div className="forum-auth-stage">
+            <div className="forum-auth-glow forum-auth-glow-left" aria-hidden="true" />
+            <div className="forum-auth-glow forum-auth-glow-right" aria-hidden="true" />
 
-          <div className="forum-auth-layout">
-            <section className="forum-card forum-auth-card w-full p-6 sm:p-8">
-              <AccessGatewayPanel targetAfterAuth={targetAfterAuth} />
-            </section>
+            <div className="forum-auth-brand">
+              <div className="forum-auth-brand-frame">
+                <span className="forum-auth-brand-line" />
+                <div className="forum-auth-brand-core">
+                  <Image
+                    src="/image.png"
+                    alt="Logo NEST"
+                    width={585}
+                    height={427}
+                    priority
+                    className="forum-auth-brand-image"
+                  />
+                </div>
+                <span className="forum-auth-brand-line" />
+              </div>
+            </div>
+
+            <div className="forum-auth-layout">
+              <section className="forum-card forum-auth-card w-full p-5 sm:p-7 lg:p-8">
+                <AccessGatewayPanel
+                  targetAfterAuth={targetAfterAuth}
+                  className="forum-access-panel-login"
+                />
+              </section>
+            </div>
           </div>
         </div>
       </div>

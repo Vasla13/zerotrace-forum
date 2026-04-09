@@ -175,16 +175,16 @@ export function AccessGatewayPanel({
       <div className="forum-access-main">
         <div className="forum-section-head items-start">
           <div>
+            <div className="forum-access-head-rails" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
             <h2 className="forum-title text-3xl sm:text-4xl">
               {step === "code"
                 ? "Entrez votre code d’accès"
                 : "Choisissez votre pseudo"}
             </h2>
-            <p className="forum-muted mt-3 max-w-xl text-sm leading-7">
-              {step === "code"
-                ? "Entre ton code pour ouvrir NEST."
-                : "Ce pseudo sera public. Tu peux en choisir un ou écrire le tien."}
-            </p>
           </div>
         </div>
 

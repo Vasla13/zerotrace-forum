@@ -107,11 +107,18 @@ export function SignalGate({ children }: SignalGateProps) {
 
       {ready && phase === "intro" ? (
         <div className="forum-gate-overlay" aria-hidden="true">
+          <div className="forum-gate-aura forum-gate-aura-left" />
+          <div className="forum-gate-aura forum-gate-aura-right" />
           <div className="forum-gate-curtain forum-gate-curtain-top" />
           <div className="forum-gate-curtain forum-gate-curtain-bottom" />
 
           <div className="forum-gate-terminal forum-gate-terminal-cinematic">
             <div className="forum-gate-brand">
+              <div className="forum-gate-brand-rails" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </div>
               <div className="forum-gate-brandmark">
                 <Image
                   src="/image.png"
@@ -121,11 +128,6 @@ export function SignalGate({ children }: SignalGateProps) {
                   priority
                   className="forum-gate-brand-image"
                 />
-              </div>
-
-              <div className="forum-gate-brandcopy">
-                <span className="forum-inline-note">NEST // accès privé</span>
-                <h1 className="forum-title forum-gate-title">Sas d&apos;entrée</h1>
               </div>
             </div>
 
@@ -173,11 +175,14 @@ export function SignalGate({ children }: SignalGateProps) {
 
       {ready && phase === "access" ? (
         <div className="forum-gate-overlay forum-gate-overlay-access">
+          <div className="forum-gate-aura forum-gate-aura-left" />
+          <div className="forum-gate-aura forum-gate-aura-right" />
           <div className="forum-gate-curtain forum-gate-curtain-top" />
           <div className="forum-gate-curtain forum-gate-curtain-bottom" />
 
           <div className="forum-gate-access-shell">
             <div className="forum-gate-access-brand">
+              <div className="forum-gate-access-pulse" aria-hidden="true" />
               <div className="forum-gate-access-mark">
                 <Image
                   src="/image.png"
@@ -188,7 +193,6 @@ export function SignalGate({ children }: SignalGateProps) {
                   className="forum-gate-brand-image"
                 />
               </div>
-              <span className="forum-inline-note">NEST // accès</span>
             </div>
 
             <div className="forum-gate-access">
