@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Plus, Search, UserRound } from "lucide-react";
+import { Avatar } from "@/components/avatar";
 import { useAuth } from "@/providers/auth-provider";
 
 export function MobileBottomNav() {
@@ -117,7 +118,15 @@ export function MobileBottomNav() {
             navItems[1].active && "forum-mobile-dock-link-active",
           )}
         >
-          <ProfileIcon className="h-4 w-4" />
+          {profile ? (
+            <Avatar
+              avatarUrl={profile.avatarUrl}
+              username={profile.username}
+              size="sm"
+            />
+          ) : (
+            <ProfileIcon className="h-4 w-4" />
+          )}
           <span>{navItems[1].label}</span>
         </Link>
       </nav>

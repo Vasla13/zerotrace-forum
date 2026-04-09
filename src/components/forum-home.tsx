@@ -162,15 +162,15 @@ export function ForumHome() {
 
   return (
     <div className="forum-grid w-full">
-      <section className="forum-card p-6 sm:p-7">
-        <div className="forum-section-head">
-          <div>
+      <section className="forum-card forum-command-panel p-6 sm:p-7">
+        <div className="forum-command-head">
+          <div className="forum-command-copy">
             <span className="forum-pill">Feed</span>
             <h1 className="forum-title mt-4 text-4xl sm:text-5xl">NEST</h1>
             <p className="forum-muted mt-3 max-w-2xl text-sm leading-7">
               {user
-                ? "Canal actif. Trie le flux, change de canal, publie vite."
-                : "Lecture publique. Accès requis pour publier et répondre."}
+                ? "Flux actif. Trie, filtre, publie."
+                : "Lecture ouverte. Accès requis pour publier."}
             </p>
           </div>
 
@@ -188,65 +188,73 @@ export function ForumHome() {
           </div>
         </div>
 
-        <div className="mt-6 max-w-2xl">
-          <InputShell
-            id="feed-search"
-            ref={searchInputRef}
-            icon={Search}
-            placeholder="Rechercher un post, un sujet, un pseudo…"
-            type="search"
-            value={searchInput}
-            onChange={(event) => {
-              setSearchInput(event.target.value);
-            }}
-          />
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {forumFeedFilterValues.map((filter) => (
-            <button
-              key={filter}
-              type="button"
-              onClick={() => {
-                setActiveFilter(filter);
+        <div className="forum-command-grid mt-6">
+          <div className="forum-command-search">
+            <InputShell
+              id="feed-search"
+              ref={searchInputRef}
+              icon={Search}
+              placeholder="Rechercher un post, un sujet, un pseudo…"
+              type="search"
+              value={searchInput}
+              onChange={(event) => {
+                setSearchInput(event.target.value);
               }}
-              className={
-                activeFilter === filter ? "forum-button-primary" : "forum-button-ghost"
-              }
-            >
-              {forumFeedFilterLabels[filter]}
-            </button>
-          ))}
-        </div>
+            />
+          </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveChannel("all");
-            }}
-            className={
-              activeChannel === "all" ? "forum-button-secondary" : "forum-button-ghost"
-            }
-          >
-            Tous
-          </button>
-          {forumChannelValues.map((channel) => (
-            <button
-              key={channel}
-              type="button"
-              onClick={() => {
-                setActiveChannel(channel);
-              }}
-              className={
-                activeChannel === channel
-                  ? "forum-button-secondary"
-                  : "forum-button-ghost"
-              }
-            >
-              {forumChannelLabels[channel]}
-            </button>
-          ))}
+          <div className="forum-command-strips">
+            <div className="forum-filter-rack">
+              {forumFeedFilterValues.map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => {
+                    setActiveFilter(filter);
+                  }}
+                  className={
+                    activeFilter === filter
+                      ? "forum-button-primary"
+                      : "forum-button-ghost"
+                  }
+                >
+                  {forumFeedFilterLabels[filter]}
+                </button>
+              ))}
+            </div>
+
+            <div className="forum-channel-rack">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveChannel("all");
+                }}
+                className={
+                  activeChannel === "all"
+                    ? "forum-button-secondary"
+                    : "forum-button-ghost"
+                }
+              >
+                Tous
+              </button>
+              {forumChannelValues.map((channel) => (
+                <button
+                  key={channel}
+                  type="button"
+                  onClick={() => {
+                    setActiveChannel(channel);
+                  }}
+                  className={
+                    activeChannel === channel
+                      ? "forum-button-secondary"
+                      : "forum-button-ghost"
+                  }
+                >
+                  {forumChannelLabels[channel]}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {searchInput ? (

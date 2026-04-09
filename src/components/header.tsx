@@ -117,7 +117,7 @@ export function Header() {
     <header className={isHiddenOnScroll ? "forum-header forum-header-hidden" : "forum-header"}>
       <div className="forum-header-banner">
         <div className="mx-auto flex min-h-[7.5rem] w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:min-h-[9rem] sm:px-6 lg:px-8">
-          <Link href="/" className="group flex min-w-0 items-center gap-3 sm:gap-4">
+          <Link href="/" className="forum-brand-link group flex min-w-0 items-center gap-3 sm:gap-4">
             <div className="forum-brandmark transition group-hover:-translate-y-0.5">
               <Image
                 src="/image.png"
@@ -128,8 +128,11 @@ export function Header() {
                 className="forum-brandmark-image"
               />
             </div>
-            <div className="forum-wordmark text-[2rem] leading-none sm:text-[2.7rem]">
-              NEST
+            <div className="forum-wordmark-stack">
+              <div className="forum-wordmark text-[2rem] leading-none sm:text-[2.7rem]">
+                NEST
+              </div>
+              <span className="forum-brand-chip">2035</span>
             </div>
           </Link>
 
