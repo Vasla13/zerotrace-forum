@@ -1,7 +1,6 @@
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   onSnapshot,
   orderBy,
@@ -11,10 +10,11 @@ import {
   type DocumentData,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
-import { getFirebaseDb } from "@/lib/firebase/client";
+import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase/client";
 import type { CommentFormValues } from "@/lib/validation/forum";
 import { commentSchema } from "@/lib/validation/forum";
 import type { ForumComment, ForumUserProfile } from "@/lib/types/forum";
+import { getResponseErrorMessage } from "@/lib/utils/errors";
 
 function toDate(value: unknown) {
   if (
@@ -109,8 +109,22 @@ export async function updatePostComment(
 export async function deletePostComment(
   postId: string,
   commentId: string,
-  _userId: string,
+  userId: string,
 ) {
-  void _userId;
-  await deleteDoc(doc(getFirebaseDb(), "posts", postId, "comments", commentId));
+  const currentUser = getFirebaseAuth().currentUser;
+
+  if (!currentUser || currentUser.uid !== userId) {
+    throw new Error("Session invalide.");
+  }
+
+  const response = await fetch(`/api/posts/${postId}/comments/${commentId}`, {
+    headers: {
+      Authorization: `Bearer ${await currentUser.getIdToken()}`,
+    },
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response));
+  }
 }

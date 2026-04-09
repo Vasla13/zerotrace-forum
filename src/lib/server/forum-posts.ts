@@ -28,7 +28,65 @@ async function deleteCollectionInBatches(collectionPath: string, batchSize = 200
   }
 }
 
-export async function deleteForumPostServer(postId: string, userId: string) {
+async function deleteReportsForPostServer(postId: string) {
+  const db = getFirebaseAdminDb();
+  const reportsSnapshot = await db
+    .collection("reports")
+    .where("postId", "==", postId)
+    .get();
+
+  if (reportsSnapshot.empty) {
+    return;
+  }
+
+  for (let index = 0; index < reportsSnapshot.docs.length; index += 400) {
+    const batch = db.batch();
+
+    reportsSnapshot.docs.slice(index, index + 400).forEach((reportSnapshot) => {
+      batch.delete(reportSnapshot.ref);
+    });
+
+    await batch.commit();
+  }
+}
+
+async function deleteReportsForCommentServer(postId: string, commentId: string) {
+  const db = getFirebaseAdminDb();
+  const reportsSnapshot = await db
+    .collection("reports")
+    .where("postId", "==", postId)
+    .get();
+
+  const matchingReports = reportsSnapshot.docs.filter((reportSnapshot) => {
+    const commentIdValue = String(reportSnapshot.data()?.commentId ?? "");
+
+    return commentIdValue === commentId;
+  });
+
+  if (!matchingReports.length) {
+    return;
+  }
+
+  for (let index = 0; index < matchingReports.length; index += 400) {
+    const batch = db.batch();
+
+    matchingReports.slice(index, index + 400).forEach((reportSnapshot) => {
+      batch.delete(reportSnapshot.ref);
+    });
+
+    await batch.commit();
+  }
+}
+
+type DeleteForumContentOptions = {
+  actorIsAdmin?: boolean;
+};
+
+export async function deleteForumPostServer(
+  postId: string,
+  actorUid: string,
+  options: DeleteForumContentOptions = {},
+) {
   const db = getFirebaseAdminDb();
   const postRef = db.collection("posts").doc(postId);
   const postSnapshot = await postRef.get();
@@ -39,14 +97,39 @@ export async function deleteForumPostServer(postId: string, userId: string) {
 
   const authorUid = String(postSnapshot.data()?.author?.uid ?? "");
 
-  if (authorUid !== userId) {
+  if (authorUid !== actorUid && !options.actorIsAdmin) {
     throw new HttpError(403, "Suppression non autorisée.");
   }
 
   await deleteCollectionInBatches(`posts/${postId}/comments`);
   await deleteCollectionInBatches(`posts/${postId}/likes`);
+  await deleteReportsForPostServer(postId);
   await deleteStoragePrefix(`posts/${authorUid}/${postId}/`);
   await postRef.delete();
+}
+
+export async function deleteForumCommentServer(
+  postId: string,
+  commentId: string,
+  actorUid: string,
+  options: DeleteForumContentOptions = {},
+) {
+  const db = getFirebaseAdminDb();
+  const commentRef = db.collection("posts").doc(postId).collection("comments").doc(commentId);
+  const commentSnapshot = await commentRef.get();
+
+  if (!commentSnapshot.exists) {
+    throw new HttpError(404, "Commentaire introuvable.");
+  }
+
+  const authorUid = String(commentSnapshot.data()?.author?.uid ?? "");
+
+  if (authorUid !== actorUid && !options.actorIsAdmin) {
+    throw new HttpError(403, "Suppression non autorisée.");
+  }
+
+  await deleteReportsForCommentServer(postId, commentId);
+  await commentRef.delete();
 }
 
 export async function setForumPostPinnedStateServer(

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { startTransition, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, Plus, Shield, UserRound } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { signOutForumUser } from "@/lib/data/users";
 import { getErrorMessage } from "@/lib/utils/errors";
@@ -17,7 +17,9 @@ export function Header() {
   const { isAdmin, profile, user } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isHiddenOnScroll, setIsHiddenOnScroll] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const lastScrollYRef = useRef(0);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const signalGateStorageKey = "nest.signal-gate.seen";
 
   useEffect(() => {
@@ -51,7 +53,46 @@ export function Header() {
     };
   }, [pathname]);
 
+  useEffect(() => {
+    setIsProfileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isProfileMenuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent | TouchEvent) {
+      if (!profileMenuRef.current) {
+        return;
+      }
+
+      const target = event.target;
+
+      if (target instanceof Node && !profileMenuRef.current.contains(target)) {
+        setIsProfileMenuOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsProfileMenuOpen(false);
+      }
+    }
+
+    window.addEventListener("mousedown", handlePointerDown);
+    window.addEventListener("touchstart", handlePointerDown, { passive: true });
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+      window.removeEventListener("touchstart", handlePointerDown);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isProfileMenuOpen]);
+
   async function handleSignOut() {
+    setIsProfileMenuOpen(false);
     setIsSigningOut(true);
     try {
       await signOutForumUser();
@@ -89,41 +130,94 @@ export function Header() {
 
           <div className="forum-header-actions">
             {user ? (
-              <>
-                {isAdmin ? (
-                  <Link href="/admin" className="forum-button-ghost">
-                    Admin
-                  </Link>
-                ) : null}
-                {profile ? (
-                  <Link
-                    href={`/profile/${profile.usernameLower}`}
-                    className="forum-button-ghost gap-2"
-                  >
+              <div ref={profileMenuRef} className="forum-profile-menu">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsProfileMenuOpen((current) => !current);
+                  }}
+                  className="forum-profile-trigger"
+                  aria-expanded={isProfileMenuOpen}
+                  aria-haspopup="menu"
+                  aria-label="Ouvrir le menu profil"
+                >
+                  {profile ? (
                     <Avatar
                       avatarUrl={profile.avatarUrl}
                       username={profile.username}
                       size="sm"
                     />
-                    <span className="hidden sm:inline">{profile.username}</span>
-                  </Link>
-                ) : (
-                  <span className="forum-button-ghost">
-                    <UserRound className="mr-2 h-4 w-4" />
-                    Profil
+                  ) : (
+                    <span className="forum-profile-trigger-fallback">
+                      <UserRound className="h-4 w-4" />
+                    </span>
+                  )}
+                  <span className="forum-profile-trigger-name">
+                    {profile?.username ?? "Profil"}
                   </span>
-                )}
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  disabled={isSigningOut}
-                  className="forum-button-icon"
-                  aria-label="Se déconnecter"
-                  title={isSigningOut ? "Déconnexion…" : "Se déconnecter"}
-                >
-                  <LogOut className="h-4 w-4" />
+                  <ChevronDown
+                    className={
+                      isProfileMenuOpen
+                        ? "forum-profile-trigger-chevron forum-profile-trigger-chevron-open"
+                        : "forum-profile-trigger-chevron"
+                    }
+                  />
                 </button>
-              </>
+
+                {isProfileMenuOpen ? (
+                  <div className="forum-profile-dropdown" role="menu">
+                    {profile ? (
+                      <Link
+                        href={`/profile/${profile.usernameLower}`}
+                        className="forum-profile-dropdown-item"
+                        role="menuitem"
+                        onClick={() => {
+                          setIsProfileMenuOpen(false);
+                        }}
+                      >
+                        <UserRound className="h-4 w-4" />
+                        Mon profil
+                      </Link>
+                    ) : null}
+                    <Link
+                      href="/posts/new"
+                      className="forum-profile-dropdown-item"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Publier
+                    </Link>
+                    {isAdmin ? (
+                      <Link
+                        href="/admin"
+                        className="forum-profile-dropdown-item"
+                        role="menuitem"
+                        onClick={() => {
+                          setIsProfileMenuOpen(false);
+                        }}
+                      >
+                        <Shield className="h-4 w-4" />
+                        Admin
+                      </Link>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleSignOut();
+                      }}
+                      disabled={isSigningOut}
+                      className="forum-profile-dropdown-item forum-profile-dropdown-item-danger"
+                      role="menuitem"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      {isSigningOut ? "Déconnexion…" : "Déconnexion"}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             ) : (
               <Link href="/login" className="forum-button-primary">
                 Accès

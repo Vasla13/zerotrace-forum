@@ -388,7 +388,7 @@ export function PostPage({ postId }: PostPageProps) {
                 <Pin className="h-4 w-4" />
               </button>
             ) : null}
-            {!isAuthor ? (
+            {!isAuthor && !isAdmin ? (
               <button
                 type="button"
                 onClick={() => {
@@ -404,14 +404,18 @@ export function PostPage({ postId }: PostPageProps) {
             ) : null}
             {isAuthor ? (
               <>
-              <Link
-                href={`/posts/${post.id}/edit`}
-                className="forum-button-icon"
-                title="Modifier"
-                aria-label="Modifier le post"
-              >
-                <Pencil className="h-4 w-4" />
-              </Link>
+                <Link
+                  href={`/posts/${post.id}/edit`}
+                  className="forum-button-icon"
+                  title="Modifier"
+                  aria-label="Modifier le post"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Link>
+              </>
+            ) : null}
+            {isAuthor || isAdmin ? (
+              <>
               <button
                 type="button"
                 onClick={() => {
@@ -421,9 +425,9 @@ export function PostPage({ postId }: PostPageProps) {
                 className="forum-button-icon forum-button-icon-danger"
                 title="Supprimer"
                 aria-label="Supprimer le post"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </>
             ) : null}
           </div>
@@ -552,7 +556,7 @@ export function PostPage({ postId }: PostPageProps) {
                     </div>
 
                     <div className="forum-toolbar">
-                      {!isCommentAuthor ? (
+                      {!isCommentAuthor && !isAdmin ? (
                         <button
                           type="button"
                           className="forum-button-icon"
@@ -568,18 +572,22 @@ export function PostPage({ postId }: PostPageProps) {
                       ) : null}
                       {isCommentAuthor ? (
                         <>
-                        <button
-                          type="button"
-                          className="forum-button-icon"
-                          onClick={() => {
-                            setEditingCommentId(comment.id);
-                            setEditingCommentDraft(comment.content);
-                          }}
-                          title="Modifier"
-                          aria-label="Modifier le commentaire"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
+                          <button
+                            type="button"
+                            className="forum-button-icon"
+                            onClick={() => {
+                              setEditingCommentId(comment.id);
+                              setEditingCommentDraft(comment.content);
+                            }}
+                            title="Modifier"
+                            aria-label="Modifier le commentaire"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        </>
+                      ) : null}
+                      {isCommentAuthor || isAdmin ? (
+                        <>
                         <button
                           type="button"
                           className="forum-button-icon forum-button-icon-danger"

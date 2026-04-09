@@ -4,7 +4,7 @@ import {
   setForumPostPinnedStateServer,
 } from "@/lib/server/forum-posts";
 import { HttpError, toErrorResponse } from "@/lib/server/http";
-import { requireAdminUid } from "@/lib/server/admin";
+import { isAdminUid, requireAdminUid } from "@/lib/server/admin";
 import { requireAuthenticatedUid } from "@/lib/server/request-auth";
 
 export const runtime = "nodejs";
@@ -35,8 +35,11 @@ export async function DELETE(request: NextRequest, context: PostRouteContext) {
   try {
     const { postId } = await context.params;
     const userId = await requireAuthenticatedUid(request);
+    const actorIsAdmin = await isAdminUid(userId);
 
-    await deleteForumPostServer(postId, userId);
+    await deleteForumPostServer(postId, userId, {
+      actorIsAdmin,
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {
