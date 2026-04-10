@@ -87,12 +87,13 @@ async function ensureAuthUser(
   profile: IdentityProfileRecord,
 ) {
   const auth = getFirebaseAdminAuth();
+  const authProfilePayload = {
+    displayName: profile.username,
+    ...(profile.avatarUrl ? { photoURL: profile.avatarUrl } : {}),
+  };
 
   try {
-    await auth.updateUser(profile.uid, {
-      displayName: profile.username,
-      photoURL: profile.avatarUrl,
-    });
+    await auth.updateUser(profile.uid, authProfilePayload);
     return;
   } catch (error) {
     if (
@@ -106,8 +107,7 @@ async function ensureAuthUser(
   }
 
   await auth.createUser({
-    displayName: profile.username,
-    photoURL: profile.avatarUrl,
+    ...authProfilePayload,
     uid: profile.uid,
   });
 }

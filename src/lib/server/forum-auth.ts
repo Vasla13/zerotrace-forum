@@ -227,7 +227,9 @@ export async function authenticateWithAccessCodeServer(payload: unknown) {
       await auth
         .updateUser(existingUid, {
           displayName: existingProfile.username,
-          photoURL: existingProfile.avatarUrl,
+          ...(existingProfile.avatarUrl
+            ? { photoURL: existingProfile.avatarUrl }
+            : {}),
         })
         .catch(() => undefined);
 
@@ -255,7 +257,7 @@ export async function authenticateWithAccessCodeServer(payload: unknown) {
   await auth
     .updateUser(uid, {
       displayName: profile.username,
-      photoURL: profile.avatarUrl,
+      ...(profile.avatarUrl ? { photoURL: profile.avatarUrl } : {}),
     })
     .catch(() => undefined);
 

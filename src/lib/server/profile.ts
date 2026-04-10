@@ -219,7 +219,9 @@ export async function updateForumProfileServer(
     getFirebaseAdminAuth()
       .updateUser(uid, {
         displayName: currentProfile.username,
-        photoURL: currentProfile.avatarUrl,
+        ...(currentProfile.avatarUrl
+          ? { photoURL: currentProfile.avatarUrl }
+          : {}),
       })
       .catch(() => undefined),
   ]);
