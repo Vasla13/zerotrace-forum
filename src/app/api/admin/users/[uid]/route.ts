@@ -41,7 +41,7 @@ export async function DELETE(
     const actorUid = await requireAdminUid(request);
     const { uid } = await context.params;
 
-    await deleteForumUserServer(actorUid, uid);
+    await deleteForumUserServer(actorUid, uid, { preserveContent: true });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

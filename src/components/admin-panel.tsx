@@ -804,7 +804,7 @@ function AdminPanelInner() {
         }
         description={
           dialogState?.kind === "delete-user"
-            ? `Le compte ${dialogState.target.username} et tout son contenu seront supprimés.`
+            ? `Le compte ${dialogState.target.username} sera supprimé. Ses posts, réponses et likes resteront visibles.`
             : dialogState?.kind === "delete-code"
               ? `Le code ${dialogState.target.note || dialogState.target.fingerprint} sera supprimé définitivement.`
               : dialogState?.kind === "delete-report"

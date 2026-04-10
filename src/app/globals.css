@@ -1870,9 +1870,8 @@ input:-webkit-autofill:focus {
   justify-content: center;
   padding: 1.25rem;
   background:
-    radial-gradient(circle at 50% 14%, rgba(0, 255, 156, 0.16), transparent 22%),
-    radial-gradient(circle at 16% 50%, rgba(0, 255, 156, 0.07), transparent 28%),
-    radial-gradient(circle at 84% 50%, rgba(0, 255, 156, 0.07), transparent 28%),
+    radial-gradient(circle at 50% 18%, rgba(0, 255, 156, 0.12), transparent 24%),
+    radial-gradient(circle at 50% 50%, rgba(0, 255, 156, 0.05), transparent 42%),
     linear-gradient(180deg, rgba(0, 0, 0, 0.985), rgba(0, 0, 0, 1));
   backdrop-filter: blur(18px);
   overflow: hidden;
@@ -2072,19 +2071,18 @@ input:-webkit-autofill:focus {
 
 .forum-gate-terminal-cinematic {
   display: grid;
-  gap: 2.15rem;
+  gap: 1.9rem;
   overflow: hidden;
   border: 1px solid rgba(0, 255, 156, 0.16);
   background:
-    radial-gradient(circle at 50% 18%, rgba(0, 255, 156, 0.12), transparent 22%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.92), rgba(1, 8, 6, 0.86)),
-    linear-gradient(135deg, rgba(0, 255, 156, 0.08), transparent 44%);
-  padding: clamp(1.5rem, 4vw, 2.5rem);
+    radial-gradient(circle at 50% 22%, rgba(0, 255, 156, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.9), rgba(1, 8, 6, 0.84)),
+    linear-gradient(135deg, rgba(0, 255, 156, 0.07), transparent 44%);
+  padding: clamp(1.5rem, 4vw, 2.4rem);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.04) inset,
     0 0 56px rgba(0, 255, 156, 0.1),
     0 40px 120px rgba(0, 0, 0, 0.68);
-  clip-path: polygon(1.15rem 0, 100% 0, 100% calc(100% - 1.15rem), calc(100% - 1.4rem) 100%, 0 100%, 0 1.15rem);
 }
 
 .forum-gate-terminal-cinematic::before {
@@ -2098,19 +2096,10 @@ input:-webkit-autofill:focus {
   animation: forumAuthSweep 9s linear infinite;
 }
 
-.forum-gate-terminal-cinematic::after {
-  content: "";
-  position: absolute;
-  inset: 0.8rem;
-  border: 1px solid rgba(0, 255, 156, 0.08);
-  clip-path: polygon(0.85rem 0, 100% 0, 100% calc(100% - 0.85rem), calc(100% - 1rem) 100%, 0 100%, 0 0.85rem);
-  pointer-events: none;
-}
-
 .forum-gate-brand {
   display: grid;
   justify-items: center;
-  gap: 1.25rem;
+  gap: 1.15rem;
   text-align: center;
 }
 
@@ -2128,10 +2117,9 @@ input:-webkit-autofill:focus {
 }
 
 .forum-gate-brandmark {
-  position: relative;
   display: grid;
   place-items: center;
-  width: clamp(13.5rem, 25vw, 19rem);
+  width: clamp(13rem, 24vw, 18rem);
   aspect-ratio: 1.18 / 1;
   border: 1px solid rgba(0, 255, 156, 0.18);
   background:
@@ -2269,7 +2257,6 @@ input:-webkit-autofill:focus {
 }
 
 .forum-gate-lines {
-  position: relative;
   display: grid;
   gap: 0.75rem;
   justify-items: center;
@@ -2337,33 +2324,6 @@ input:-webkit-autofill:focus {
   display: grid;
   gap: 1.5rem;
   width: min(100%, 58rem);
-  padding: clamp(1rem, 2vw, 1.2rem);
-  border: 1px solid rgba(0, 255, 156, 0.12);
-  background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.24), rgba(0, 0, 0, 0.12)),
-    linear-gradient(135deg, rgba(0, 255, 156, 0.04), transparent 48%);
-  clip-path: polygon(1.15rem 0, 100% 0, 100% calc(100% - 1.15rem), calc(100% - 1.4rem) 100%, 0 100%, 0 1.15rem);
-  animation: forumGatePanelRise 480ms cubic-bezier(0.18, 0.84, 0.24, 1) both;
-}
-
-.forum-gate-access-shell::before {
-  content: "";
-  position: absolute;
-  inset: 0.7rem;
-  border: 1px solid rgba(0, 255, 156, 0.08);
-  clip-path: polygon(0.8rem 0, 100% 0, 100% calc(100% - 0.8rem), calc(100% - 1rem) 100%, 0 100%, 0 0.8rem);
-  pointer-events: none;
-}
-
-.forum-gate-access-shell::after {
-  content: "";
-  position: absolute;
-  left: 1.2rem;
-  right: 1.2rem;
-  top: 0.8rem;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(0, 255, 156, 0.4), transparent 88%);
-  pointer-events: none;
 }
 
 .forum-gate-access-brand {
@@ -2395,9 +2355,8 @@ input:-webkit-autofill:focus {
   height: clamp(7rem, 16vw, 10rem);
   border: 1px solid rgba(0, 255, 156, 0.18);
   background:
-    radial-gradient(circle at 38% 35%, rgba(0, 255, 156, 0.18), transparent 58%),
+    radial-gradient(circle at 50% 35%, rgba(0, 255, 156, 0.18), transparent 58%),
     linear-gradient(180deg, rgba(1, 9, 6, 0.94), rgba(0, 0, 0, 0.84));
-  clip-path: polygon(0.95rem 0, 100% 0, 100% calc(100% - 0.95rem), calc(100% - 1.15rem) 100%, 0 100%, 0 0.95rem);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.05),
     0 0 46px rgba(0, 255, 156, 0.14);
@@ -2433,7 +2392,6 @@ input:-webkit-autofill:focus {
 
 .forum-gate-access {
   width: 100%;
-  animation: forumGatePanelRise 540ms cubic-bezier(0.18, 0.84, 0.24, 1) both;
 }
 
 body[data-gate-active="true"] {
