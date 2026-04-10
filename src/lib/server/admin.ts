@@ -293,6 +293,27 @@ async function deleteDocumentSnapshots(
   }
 }
 
+async function updateDocumentSnapshots(
+  snapshots: FirebaseFirestore.QueryDocumentSnapshot[],
+  data: FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>,
+) {
+  if (!snapshots.length) {
+    return;
+  }
+
+  const db = getFirebaseAdminDb();
+
+  for (let index = 0; index < snapshots.length; index += 400) {
+    const batch = db.batch();
+
+    snapshots.slice(index, index + 400).forEach((documentSnapshot) => {
+      batch.update(documentSnapshot.ref, data);
+    });
+
+    await batch.commit();
+  }
+}
+
 async function deleteReportsForDeletedUser(options: {
   commentIds: string[];
   postIds: string[];
@@ -383,6 +404,7 @@ export async function deleteForumUserServer(
   targetUid: string,
   options?: {
     allowSelf?: boolean;
+    preserveContent?: boolean;
   },
 ) {
   if (actorUid === targetUid && !options?.allowSelf) {
@@ -408,17 +430,28 @@ export async function deleteForumUserServer(
     (commentSnapshot) => commentSnapshot.id,
   );
 
-  for (const postSnapshot of authoredPosts.docs) {
-    await deleteForumPostServer(postSnapshot.id, targetUid);
-  }
+  if (options?.preserveContent) {
+    await Promise.all([
+      updateDocumentSnapshots(authoredPosts.docs, {
+        "author.avatarUrl": null,
+      }),
+      updateDocumentSnapshots(authoredComments.docs, {
+        "author.avatarUrl": null,
+      }),
+    ]);
+  } else {
+    for (const postSnapshot of authoredPosts.docs) {
+      await deleteForumPostServer(postSnapshot.id, targetUid);
+    }
 
-  await deleteDocumentSnapshots(authoredComments.docs);
-  await deleteUserLikes(targetUid);
-  await deleteReportsForDeletedUser({
-    commentIds: authoredCommentIds,
-    postIds: authoredPostIds,
-    reportedByUid: targetUid,
-  });
+    await deleteDocumentSnapshots(authoredComments.docs);
+    await deleteUserLikes(targetUid);
+    await deleteReportsForDeletedUser({
+      commentIds: authoredCommentIds,
+      postIds: authoredPostIds,
+      reportedByUid: targetUid,
+    });
+  }
 
   const accessCodeSnapshots = await db
     .collection("accessCodes")
@@ -442,7 +475,9 @@ export async function deleteForumUserServer(
   await db.collection("usernames").doc(targetProfile.usernameLower).delete();
   await db.collection("users").doc(targetUid).delete();
   await deleteStoragePrefix(`users/${targetUid}/`);
-  await deleteStoragePrefix(`posts/${targetUid}/`);
+  if (!options?.preserveContent) {
+    await deleteStoragePrefix(`posts/${targetUid}/`);
+  }
   await getFirebaseAdminAuth().deleteUser(targetUid).catch((error: unknown) => {
     if (
       error &&

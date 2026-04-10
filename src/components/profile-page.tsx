@@ -675,8 +675,8 @@ export function ProfilePage({ username }: ProfilePageProps) {
                   <article className="forum-card-quiet p-5 sm:p-6">
                     <div className="forum-inline-note">compte</div>
                     <p className="forum-muted mt-4 text-sm leading-7">
-                      Si tu supprimes ton compte, tes posts, tes réponses et ton accès
-                      seront retirés du forum.
+                      Si tu supprimes ton compte, ton accès sera coupé mais tes posts,
+                      tes réponses et tes likes resteront visibles sur le forum.
                     </p>
                     <div className="mt-5">
                       <button
@@ -709,7 +709,7 @@ export function ProfilePage({ username }: ProfilePageProps) {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Supprimer ton compte ?"
-        description="Tout ton contenu sera retiré du forum. Cette action est définitive."
+        description="Ton accès sera supprimé. Tes posts, réponses et likes resteront visibles. Cette action est définitive."
         confirmLabel="Supprimer le compte"
         tone="danger"
         busy={isDeletingAccount}

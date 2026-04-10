@@ -21,7 +21,10 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const uid = await requireAuthenticatedUid(request);
-    await deleteForumUserServer(uid, uid, { allowSelf: true });
+    await deleteForumUserServer(uid, uid, {
+      allowSelf: true,
+      preserveContent: true,
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {
