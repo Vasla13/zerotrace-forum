@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   deleteForumUserServer,
   requireAdminUid,
+  setUserCertificationStatus,
   setUserAdminRole,
 } from "@/lib/server/admin";
 import { HttpError, toErrorResponse } from "@/lib/server/http";
@@ -19,10 +20,21 @@ export async function PATCH(
   try {
     const actorUid = await requireAdminUid(request);
     const { uid } = await context.params;
-    const payload = (await request.json()) as { isAdmin?: unknown };
+    const payload = (await request.json()) as {
+      certificationStatus?: unknown;
+      isAdmin?: unknown;
+    };
 
     if (typeof payload.isAdmin !== "boolean") {
-      throw new HttpError(400, "Valeur admin invalide.");
+      if (
+        payload.certificationStatus === "approved" ||
+        payload.certificationStatus === "none"
+      ) {
+        await setUserCertificationStatus(uid, payload.certificationStatus);
+        return NextResponse.json({ ok: true });
+      }
+
+      throw new HttpError(400, "Action admin invalide.");
     }
 
     await setUserAdminRole(actorUid, uid, payload.isAdmin);

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { startTransition, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, LogOut, Plus, Shield, UserRound } from "lucide-react";
+import { ChevronDown, EyeOff, LogOut, Plus, Shield, UserRound } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { signOutForumUser } from "@/lib/data/users";
 import { getErrorMessage } from "@/lib/utils/errors";
@@ -14,7 +14,7 @@ import { toast } from "sonner";
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isAdmin, profile, user } = useAuth();
+  const { canAccessShadow, isAdmin, profile, user } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isHiddenOnScroll, setIsHiddenOnScroll] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -198,6 +198,19 @@ export function Header() {
                       <Plus className="h-4 w-4" />
                       Publier
                     </Link>
+                    {canAccessShadow ? (
+                      <Link
+                        href="/face-cachee"
+                        className="forum-profile-dropdown-item"
+                        role="menuitem"
+                        onClick={() => {
+                          setIsProfileMenuOpen(false);
+                        }}
+                      >
+                        <EyeOff className="h-4 w-4" />
+                        Face cachée
+                      </Link>
+                    ) : null}
                     {isAdmin ? (
                       <Link
                         href="/admin"
@@ -228,7 +241,7 @@ export function Header() {
               </div>
             ) : (
               <Link href="/login" className="forum-button-primary">
-                Accès
+                Entrer
               </Link>
             )}
           </div>

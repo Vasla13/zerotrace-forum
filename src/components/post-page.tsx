@@ -15,6 +15,7 @@ import { Avatar } from "@/components/avatar";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { PostMediaGallery } from "@/components/post-media-gallery";
+import { RealmTheme } from "@/components/realm-theme";
 import {
   createPostComment,
   deletePostComment,
@@ -28,7 +29,7 @@ import {
   subscribeToPost,
 } from "@/lib/data/posts";
 import { createForumReport } from "@/lib/data/reports";
-import { getForumChannelLabel } from "@/lib/forum/config";
+import { getForumChannelLabel, getForumRealmLabel } from "@/lib/forum/config";
 import type { ForumComment, ForumPost } from "@/lib/types/forum";
 import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
 import { getErrorMessage } from "@/lib/utils/errors";
@@ -119,7 +120,7 @@ export function PostPage({ postId }: PostPageProps) {
 
   async function handleToggleLike() {
     if (!user) {
-      toast.error("Connecte-toi pour liker un post.");
+      toast.error("Forge une identité pour liker.");
       startTransition(() => {
         router.push(`/login?next=${encodeURIComponent(`/posts/${postId}`)}`);
       });
@@ -139,7 +140,7 @@ export function PostPage({ postId }: PostPageProps) {
 
   async function handleCreateComment() {
     if (!user || !profile) {
-      toast.error("Connecte-toi pour commenter.");
+      toast.error("Forge une identité pour répondre.");
       return;
     }
 
@@ -214,7 +215,7 @@ export function PostPage({ postId }: PostPageProps) {
 
   async function handleReportPost() {
     if (!user || !post) {
-      toast.error("Connecte-toi pour signaler.");
+      toast.error("Forge une identité pour signaler.");
       startTransition(() => {
         router.push(`/login?next=${encodeURIComponent(`/posts/${postId}`)}`);
       });
@@ -242,7 +243,7 @@ export function PostPage({ postId }: PostPageProps) {
 
   async function handleReportComment(comment: ForumComment) {
     if (!user) {
-      toast.error("Connecte-toi pour signaler.");
+      toast.error("Forge une identité pour signaler.");
       startTransition(() => {
         router.push(`/login?next=${encodeURIComponent(`/posts/${postId}`)}`);
       });
@@ -333,6 +334,8 @@ export function PostPage({ postId }: PostPageProps) {
 
   return (
     <div className="mx-auto grid w-full max-w-5xl gap-6">
+      <RealmTheme realm={post.realm} />
+
       <article className="forum-card p-6 sm:p-8">
         <div className="forum-section-head items-start">
           <div className="flex min-w-0 items-center gap-3">
@@ -354,6 +357,12 @@ export function PostPage({ postId }: PostPageProps) {
                 </span>
                 <span className="forum-meta-dot" />
                 <span>{getForumChannelLabel(post.channel)}</span>
+                {post.realm === "certified" ? (
+                  <>
+                    <span className="forum-meta-dot" />
+                    <span>{getForumRealmLabel(post.realm)}</span>
+                  </>
+                ) : null}
                 {post.isPinned ? (
                   <>
                     <span className="forum-meta-dot" />
@@ -460,7 +469,9 @@ export function PostPage({ postId }: PostPageProps) {
           </h1>
         ) : (
           <div className="mt-6">
-            <span className="forum-pill">Carte média</span>
+            <span className="forum-pill">
+              {post.realm === "certified" ? "Carte rouge" : "Carte média"}
+            </span>
           </div>
         )}
 
@@ -511,12 +522,12 @@ export function PostPage({ postId }: PostPageProps) {
           </div>
         ) : (
           <div className="forum-card-quiet mt-6 flex flex-wrap items-center justify-between gap-4 p-5">
-            <p className="forum-muted text-sm">Accès requis pour répondre.</p>
+            <p className="forum-muted text-sm">Identité requise pour répondre.</p>
             <Link
               href={`/login?next=${encodeURIComponent(`/posts/${postId}`)}`}
               className="forum-button-ghost"
             >
-              Accès
+              Entrer
             </Link>
           </div>
         )}

@@ -5,7 +5,25 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "realm",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "author.uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "realm",
           "order": "ASCENDING"
         },
         {

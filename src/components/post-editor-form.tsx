@@ -2,17 +2,20 @@
 
 import Link from "next/link";
 import { startTransition, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ImagePlus, PenLine, Send, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { PostMediaGallery } from "@/components/post-media-gallery";
+import { RealmTheme } from "@/components/realm-theme";
 import {
   forumChannelLabels,
   forumChannelValues,
   forumPostDisplayModeLabels,
   forumPostDisplayModeValues,
+  forumRealmLabels,
+  forumRealmValues,
 } from "@/lib/forum/config";
 import {
   createDraftPostId,
@@ -84,7 +87,9 @@ function revokeDraftMediaPreview(item: DraftMediaItem) {
 
 export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
   const router = useRouter();
-  const { configured, loading: authLoading, profile, user } = useAuth();
+  const searchParams = useSearchParams();
+  const { canAccessShadow, configured, loading: authLoading, profile, user } =
+    useAuth();
   const [post, setPost] = useState<ForumPost | null | undefined>(
     mode === "create" ? null : undefined,
   );
@@ -108,13 +113,32 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
       title: "",
       content: "",
       displayMode: "standard",
+      realm: "public",
     },
   });
 
   const displayModeValue = watch("displayMode");
   const channelValue = watch("channel");
+  const realmValue = watch("realm");
   const titleValue = watch("title");
   const contentValue = watch("content");
+  const requestedRealm = searchParams.get("realm");
+  const activeRealm =
+    mode === "edit" && post ? post.realm : realmValue;
+
+  useEffect(() => {
+    if (mode !== "create") {
+      return;
+    }
+
+    const nextRealm =
+      requestedRealm === "certified" && canAccessShadow ? "certified" : "public";
+
+    setValue("realm", nextRealm, {
+      shouldDirty: false,
+      shouldValidate: true,
+    });
+  }, [canAccessShadow, mode, requestedRealm, setValue]);
 
   useEffect(() => {
     mediaItemsRef.current = mediaItems;
@@ -144,6 +168,7 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
             title: nextPost.title,
             content: nextPost.content,
             displayMode: nextPost.displayMode,
+            realm: nextPost.realm,
           });
           setMediaItems((currentItems) => {
             currentItems.forEach(revokeDraftMediaPreview);
@@ -225,7 +250,7 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
 
   async function onSubmit(values: PostFormValues) {
     if (!profile || !user) {
-      toast.error("Tu dois être connecté pour publier.");
+      toast.error("Forge une identité pour publier.");
       return;
     }
 
@@ -369,6 +394,8 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
 
   return (
     <div className="mx-auto w-full max-w-4xl">
+      <RealmTheme realm={activeRealm} />
+
       <section className="forum-card p-6 sm:p-8">
         <div className="forum-section-head items-start">
           <div>
@@ -380,7 +407,7 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
               {mode === "create" ? "Nouveau post" : "Modifier le post"}
             </h1>
             <p className="forum-muted mt-3 text-sm">
-              Choisis un canal, puis poste un message ou une carte média.
+              Choisis la couche, le canal, puis poste un message ou une carte média.
             </p>
           </div>
         </div>
@@ -397,6 +424,48 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
               event.target.value = "";
             }}
           />
+
+          <section className="grid gap-3">
+            <div className="text-sm font-medium">Couche</div>
+            {mode === "create" ? (
+              <div className="flex flex-wrap gap-2">
+                {forumRealmValues.map((realm) => {
+                  const disabled = realm === "certified" && !canAccessShadow;
+
+                  return (
+                    <button
+                      key={realm}
+                      type="button"
+                      onClick={() => {
+                        if (disabled) {
+                          return;
+                        }
+
+                        setValue("realm", realm, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                      }}
+                      disabled={disabled}
+                      className={
+                        realmValue === realm
+                          ? "forum-button-secondary"
+                          : "forum-button-ghost"
+                      }
+                    >
+                      {forumRealmLabels[realm]}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="forum-meta-line">
+                <span>{forumRealmLabels[activeRealm]}</span>
+                <span className="forum-meta-dot" />
+                <span>destination verrouillée sur ce post</span>
+              </div>
+            )}
+          </section>
 
           <section className="grid gap-3">
             <div className="text-sm font-medium">Format</div>
@@ -575,11 +644,17 @@ export function PostEditorForm({ mode, postId }: PostEditorFormProps) {
 
           <div className="forum-toolbar justify-between">
             <span className="forum-muted text-sm">
-              Canal public : {forumChannelLabels[channelValue]}.
+              {forumRealmLabels[activeRealm]} : {forumChannelLabels[channelValue]}.
             </span>
             <div className="forum-toolbar">
               <Link
-                href={mode === "edit" && postId ? `/posts/${postId}` : "/"}
+                href={
+                  mode === "edit" && postId
+                    ? `/posts/${postId}`
+                    : activeRealm === "certified"
+                      ? "/face-cachee"
+                      : "/"
+                }
                 className="forum-button-ghost"
               >
                 Annuler

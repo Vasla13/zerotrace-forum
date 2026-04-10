@@ -165,6 +165,21 @@ export async function togglePostLikeServer(postId: string, userId: string) {
       throw new HttpError(404, "Post introuvable.");
     }
 
+    if ((postSnapshot.data()?.realm ?? "public") === "certified") {
+      const [adminSnapshot, profileSnapshot] = await Promise.all([
+        transaction.get(db.collection("admins").doc(userId)),
+        transaction.get(db.collection("users").doc(userId)),
+      ]);
+
+      if (
+        !adminSnapshot.exists &&
+        (!profileSnapshot.exists ||
+          profileSnapshot.data()?.certificationStatus !== "approved")
+      ) {
+        throw new HttpError(403, "Accès refusé à ce post.");
+      }
+    }
+
     const likeCountValue = postSnapshot.data()?.likeCount;
     const currentLikeCount =
       typeof likeCountValue === "number" && Number.isFinite(likeCountValue)

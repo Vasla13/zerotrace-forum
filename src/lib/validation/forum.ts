@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   forumChannelValues,
   forumPostDisplayModeValues,
+  forumRealmValues,
 } from "@/lib/forum/config";
 import { MAX_POST_MEDIA_ITEMS } from "@/lib/utils/media";
 
@@ -26,6 +27,7 @@ const postFieldsBaseSchema = z.object({
     .trim()
     .max(5000, "Le contenu ne peut pas dépasser 5000 caractères."),
   displayMode: z.enum(forumPostDisplayModeValues),
+  realm: z.enum(forumRealmValues),
   title: z
     .string()
     .trim()

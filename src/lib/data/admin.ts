@@ -75,6 +75,22 @@ export async function setAdminUserRole(
   }
 }
 
+export async function setAdminUserCertification(
+  user: User,
+  targetUid: string,
+  certificationStatus: "approved" | "none",
+) {
+  const response = await fetch(`/api/admin/users/${targetUid}`, {
+    body: JSON.stringify({ certificationStatus }),
+    headers: await buildAuthorizedHeaders(user),
+    method: "PATCH",
+  });
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response));
+  }
+}
+
 export async function deleteAdminUser(user: User, targetUid: string) {
   const response = await fetch(`/api/admin/users/${targetUid}`, {
     headers: await buildAuthorizedHeaders(user),

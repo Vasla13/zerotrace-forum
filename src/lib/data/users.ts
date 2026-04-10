@@ -11,6 +11,7 @@ import {
   type DocumentSnapshot,
 } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDb, prepareFirebaseAuth } from "@/lib/firebase/client";
+import type { ForumRealm } from "@/lib/forum/config";
 import type { ForumUserProfile } from "@/lib/types/forum";
 import type { AccessAuthValues } from "@/lib/validation/auth";
 import { accessAuthSchema } from "@/lib/validation/auth";
@@ -63,6 +64,12 @@ function mapUserProfile(
       typeof data.avatarUrl === "string" && data.avatarUrl.trim()
         ? data.avatarUrl
         : null,
+    certificationRequestedAt: toDate(data.certificationRequestedAt),
+    certificationStatus:
+      data.certificationStatus === "pending" || data.certificationStatus === "approved"
+        ? data.certificationStatus
+        : "none",
+    certifiedAt: toDate(data.certifiedAt),
     uid: String(data.uid),
     username: String(data.username),
     usernameLower: String(data.usernameLower),
@@ -153,6 +160,17 @@ export async function deleteForumProfile(user: User) {
   }
 }
 
+export async function requestForumCertification(user: User) {
+  const response = await fetch("/api/profile/certification", {
+    headers: await buildAuthorizedHeaders(user),
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response));
+  }
+}
+
 export function subscribeToUserProfile(
   uid: string,
   onData: (profile: ForumUserProfile | null) => void,
@@ -183,9 +201,16 @@ export async function getUserProfileByUsername(username: string) {
   return mapUserProfile(userProfileSnapshot);
 }
 
-export async function getUserPostCount(uid: string) {
+export async function getUserPostCount(
+  uid: string,
+  realm: ForumRealm = "public",
+) {
   const postsCount = await getCountFromServer(
-    query(collection(getFirebaseDb(), "posts"), where("author.uid", "==", uid)),
+    query(
+      collection(getFirebaseDb(), "posts"),
+      where("author.uid", "==", uid),
+      where("realm", "==", realm),
+    ),
   );
 
   return postsCount.data().count;

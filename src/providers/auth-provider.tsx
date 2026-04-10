@@ -12,8 +12,10 @@ import type { ForumUserProfile } from "@/lib/types/forum";
 
 type AuthContextValue = {
   adminSession: AdminSession | null;
+  canAccessShadow: boolean;
   configured: boolean;
   isAdmin: boolean;
+  isCertified: boolean;
   loading: boolean;
   profile: ForumUserProfile | null;
   user: User | null;
@@ -108,8 +110,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     <AuthContext.Provider
       value={{
         adminSession,
+        canAccessShadow:
+          Boolean(adminSession?.isAdmin) ||
+          profile?.certificationStatus === "approved",
         configured: isFirebaseConfigured,
         isAdmin: Boolean(adminSession?.isAdmin),
+        isCertified: profile?.certificationStatus === "approved",
         loading,
         profile,
         user,

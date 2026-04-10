@@ -9,6 +9,22 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isAdminUser() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isCertifiedUser() {
+      return isSignedIn()
+        && (
+          isAdminUser()
+          || (
+            exists(/databases/$(database)/documents/users/$(request.auth.uid))
+            && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.certificationStatus == 'approved'
+          )
+        );
+    }
+
     function validPlainText(value, min, max) {
       return value is string && value.size() >= min && value.size() <= max;
     }
@@ -61,8 +77,23 @@ service cloud.firestore {
       return value in ['general', 'fuites', 'matos', 'terrain'];
     }
 
+    function validRealm(value) {
+      return value in ['public', 'certified'];
+    }
+
     function validDisplayMode(value) {
       return value in ['standard', 'media'];
+    }
+
+    function postRealm(postData) {
+      return ('realm' in postData) && postData.realm == 'certified'
+        ? 'certified'
+        : 'public';
+    }
+
+    function canAccessRealm(realm) {
+      return realm == 'public'
+        || (realm == 'certified' && isCertifiedUser());
     }
 
     function validMediaFlags(hasMedia, mediaCount, media) {
@@ -102,7 +133,7 @@ service cloud.firestore {
     }
 
     match /posts/{postId} {
-      allow read: if true;
+      allow read: if canAccessRealm(postRealm(resource.data));
       allow create: if isSignedIn()
         && request.resource.data.keys().hasOnly([
           'author',
@@ -115,6 +146,7 @@ service cloud.firestore {
           'likeCount',
           'media',
           'mediaCount',
+          'realm',
           'searchKeywords',
           'title',
           'updatedAt'
@@ -122,6 +154,8 @@ service cloud.firestore {
         && validAuthor(request.resource.data.author)
         && validChannel(request.resource.data.channel)
         && validDisplayMode(request.resource.data.displayMode)
+        && validRealm(request.resource.data.realm)
+        && canAccessRealm(request.resource.data.realm)
         && validPostBody(
           request.resource.data.title,
           request.resource.data.content,
@@ -153,6 +187,7 @@ service cloud.firestore {
           'likeCount',
           'media',
           'mediaCount',
+          'realm',
           'searchKeywords',
           'title',
           'updatedAt'
@@ -161,6 +196,8 @@ service cloud.firestore {
         && request.resource.data.createdAt == resource.data.createdAt
         && validChannel(request.resource.data.channel)
         && validDisplayMode(request.resource.data.displayMode)
+        && request.resource.data.realm == resource.data.realm
+        && canAccessRealm(request.resource.data.realm)
         && validPostBody(
           request.resource.data.title,
           request.resource.data.content,
@@ -180,8 +217,9 @@ service cloud.firestore {
       allow delete: if false;
 
       match /comments/{commentId} {
-        allow read: if true;
+        allow read: if canAccessRealm(postRealm(get(/databases/$(database)/documents/posts/$(postId)).data));
         allow create: if isSignedIn()
+          && canAccessRealm(postRealm(get(/databases/$(database)/documents/posts/$(postId)).data))
           && request.resource.data.keys().hasOnly([
             'author',
             'content',
@@ -194,6 +232,7 @@ service cloud.firestore {
           && request.resource.data.updatedAt == request.time;
 
         allow update: if isSignedIn()
+          && canAccessRealm(postRealm(get(/databases/$(database)/documents/posts/$(postId)).data))
           && resource.data.author.uid == request.auth.uid
           && request.resource.data.keys().hasOnly([
             'author',
@@ -206,11 +245,14 @@ service cloud.firestore {
           && validPlainText(request.resource.data.content, 2, 1000)
           && request.resource.data.updatedAt == request.time;
 
-        allow delete: if isSignedIn() && resource.data.author.uid == request.auth.uid;
+        allow delete: if isSignedIn()
+          && canAccessRealm(postRealm(get(/databases/$(database)/documents/posts/$(postId)).data))
+          && resource.data.author.uid == request.auth.uid;
       }
 
       match /likes/{userId} {
-        allow read: if isOwner(userId);
+        allow read: if isOwner(userId)
+          && canAccessRealm(postRealm(get(/databases/$(database)/documents/posts/$(postId)).data));
         allow create, update, delete: if false;
       }
     }

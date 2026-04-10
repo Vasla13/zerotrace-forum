@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
-import { Plus, Search, UserRound } from "lucide-react";
+import { EyeOff, Plus, Search, UserRound } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { useAuth } from "@/providers/auth-provider";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { configured, profile, user } = useAuth();
+  const { canAccessShadow, configured, profile, user } = useAuth();
   const [hash, setHash] = useState("");
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export function MobileBottomNav() {
   }
 
   const profileHref = profile ? `/profile/${profile.usernameLower}` : "/login";
-  const profileLabel = user ? "Profil" : "Accès";
+  const profileLabel = user ? "Profil" : "Entrer";
   const ProfileIcon = UserRound;
 
   const navItems = [
@@ -105,11 +105,24 @@ export function MobileBottomNav() {
         <Link
           href={user ? "/posts/new" : "/login"}
           className="forum-mobile-dock-post"
-          aria-label={user ? "Nouveau post" : "Accès"}
-          title={user ? "Publier" : "Accès"}
+          aria-label={user ? "Nouveau post" : "Entrer"}
+          title={user ? "Publier" : "Entrer"}
         >
           <Plus className="h-5 w-5" />
         </Link>
+
+        {canAccessShadow ? (
+          <Link
+            href="/face-cachee"
+            className={clsx(
+              "forum-mobile-dock-link",
+              pathname === "/face-cachee" && "forum-mobile-dock-link-active",
+            )}
+          >
+            <EyeOff className="h-4 w-4" />
+            <span>Caché</span>
+          </Link>
+        ) : null}
 
         <Link
           href={navItems[1].href}

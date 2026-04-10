@@ -10,6 +10,9 @@ import { deleteStoragePrefix } from "@/lib/server/storage";
 import { normalizeText } from "@/lib/utils/text";
 
 type AdminUserRecord = {
+  certificationRequestedAt: Date | null;
+  certificationStatus: "none" | "pending" | "approved";
+  certifiedAt: Date | null;
   createdAt: Date | null;
   isAdmin: boolean;
   isBootstrapAdmin: boolean;
@@ -50,6 +53,10 @@ function toDate(value: unknown) {
   return null;
 }
 
+function parseCertificationStatus(value: unknown) {
+  return value === "pending" || value === "approved" ? value : "none";
+}
+
 function parseEnvList(value: string | undefined, mode: "raw" | "normalized") {
   return new Set(
     (value ?? "")
@@ -79,6 +86,9 @@ async function getUserProfileRecord(uid: string) {
   const data = snapshot.data();
 
   return {
+    certificationRequestedAt: toDate(data?.certificationRequestedAt),
+    certificationStatus: parseCertificationStatus(data?.certificationStatus),
+    certifiedAt: toDate(data?.certifiedAt),
     createdAt: toDate(data?.createdAt),
     uid,
     username: String(data?.username ?? ""),
@@ -215,6 +225,9 @@ export async function listAdminUsers(search = "") {
       const isBootstrapAdmin = isBootstrapAdminUser(snapshot.id, usernameLower);
 
       return {
+        certificationRequestedAt: toDate(data?.certificationRequestedAt),
+        certificationStatus: parseCertificationStatus(data?.certificationStatus),
+        certifiedAt: toDate(data?.certifiedAt),
         createdAt: toDate(data?.createdAt),
         isAdmin: explicitAdminUids.has(snapshot.id) || isBootstrapAdmin,
         isBootstrapAdmin,
@@ -227,6 +240,70 @@ export async function listAdminUsers(search = "") {
   );
 
   return users;
+}
+
+export async function requestUserCertification(uid: string) {
+  const db = getFirebaseAdminDb();
+  const userRef = db.collection("users").doc(uid);
+
+  await db.runTransaction(async (transaction) => {
+    const userSnapshot = await transaction.get(userRef);
+
+    if (!userSnapshot.exists) {
+      throw new HttpError(404, "Profil introuvable.");
+    }
+
+    const certificationStatus = parseCertificationStatus(
+      userSnapshot.data()?.certificationStatus,
+    );
+
+    if (certificationStatus === "approved") {
+      throw new HttpError(400, "Ce compte est déjà certifié.");
+    }
+
+    if (certificationStatus === "pending") {
+      throw new HttpError(400, "Demande déjà envoyée.");
+    }
+
+    transaction.update(userRef, {
+      certificationRequestedAt: Timestamp.now(),
+      certificationStatus: "pending",
+      certifiedAt: null,
+    });
+  });
+}
+
+export async function setUserCertificationStatus(
+  targetUid: string,
+  certificationStatus: "approved" | "none",
+) {
+  const db = getFirebaseAdminDb();
+  const userRef = db.collection("users").doc(targetUid);
+
+  await db.runTransaction(async (transaction) => {
+    const userSnapshot = await transaction.get(userRef);
+
+    if (!userSnapshot.exists) {
+      throw new HttpError(404, "Utilisateur introuvable.");
+    }
+
+    const currentRequestedAt = userSnapshot.data()?.certificationRequestedAt ?? null;
+
+    if (certificationStatus === "approved") {
+      transaction.update(userRef, {
+        certificationRequestedAt: currentRequestedAt ?? Timestamp.now(),
+        certificationStatus: "approved",
+        certifiedAt: Timestamp.now(),
+      });
+      return;
+    }
+
+    transaction.update(userRef, {
+      certificationRequestedAt: null,
+      certificationStatus: "none",
+      certifiedAt: null,
+    });
+  });
 }
 
 export async function setUserAdminRole(
@@ -472,6 +549,7 @@ export async function deleteForumUserServer(
   }
 
   await db.collection("admins").doc(targetUid).delete().catch(() => undefined);
+  await db.collection("credentials").doc(targetUid).delete().catch(() => undefined);
   await db.collection("usernames").doc(targetProfile.usernameLower).delete();
   await db.collection("users").doc(targetUid).delete();
   await deleteStoragePrefix(`users/${targetUid}/`);

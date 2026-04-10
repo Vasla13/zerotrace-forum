@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { AccessGatewayPanel } from "@/components/access-gateway-panel";
+import { IdentityGatewayPanel } from "@/components/identity-gateway-panel";
 import { useAuth } from "@/providers/auth-provider";
 
 type SignalGateProps = {
@@ -196,7 +196,7 @@ export function SignalGate({ children }: SignalGateProps) {
             </div>
 
             <div className="forum-gate-access">
-              <AccessGatewayPanel
+              <IdentityGatewayPanel
                 targetAfterAuth="/"
                 onAuthenticated={dismissGate}
               />

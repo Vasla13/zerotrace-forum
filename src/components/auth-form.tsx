@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AccessGatewayPanel } from "@/components/access-gateway-panel";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
+import { IdentityGatewayPanel } from "@/components/identity-gateway-panel";
 import { useAuth } from "@/providers/auth-provider";
 
 export function AuthForm() {
@@ -51,7 +51,7 @@ export function AuthForm() {
 
             <div className="forum-auth-layout">
               <section className="forum-card forum-auth-card w-full p-5 sm:p-7 lg:p-8">
-                <AccessGatewayPanel
+                <IdentityGatewayPanel
                   targetAfterAuth={targetAfterAuth}
                   className="forum-access-panel-login"
                 />

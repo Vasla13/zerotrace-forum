@@ -18,7 +18,7 @@ import {
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase/client";
-import type { ForumChannel, ForumFeedFilter } from "@/lib/forum/config";
+import type { ForumChannel, ForumFeedFilter, ForumRealm } from "@/lib/forum/config";
 import type {
   FeedPage,
   FeedQuery,
@@ -38,6 +38,7 @@ const forumChannels = new Set<ForumChannel>([
 ]);
 
 const forumDisplayModes = new Set(["standard", "media"]);
+const forumRealms = new Set<ForumRealm>(["public", "certified"]);
 
 function toDate(value: unknown) {
   if (
@@ -89,6 +90,7 @@ function mapPostSnapshot(
     : [];
   const channelValue = String(data.channel ?? "");
   const displayModeValue = String(data.displayMode ?? "");
+  const realmValue = String(data.realm ?? "public");
 
   return {
     id: snapshot.id,
@@ -115,6 +117,9 @@ function mapPostSnapshot(
         : 0,
     isPinned: Boolean(data.isPinned),
     media,
+    realm: forumRealms.has(realmValue as ForumRealm)
+      ? (realmValue as ForumRealm)
+      : "public",
     searchKeywords: Array.isArray(data.searchKeywords)
       ? data.searchKeywords.map(String)
       : [],
@@ -164,17 +169,24 @@ function sortPosts(posts: ForumPost[], filter: ForumFeedFilter) {
 
 async function fetchPostsBatch(
   postsReference: CollectionReference<DocumentData>,
+  realm: ForumRealm,
   cursor: QueryDocumentSnapshot<DocumentData> | null,
 ) {
   return getDocs(
     cursor
       ? query(
           postsReference,
+          where("realm", "==", realm),
           orderBy("createdAt", "desc"),
           startAfter(cursor),
           limit(50),
         )
-      : query(postsReference, orderBy("createdAt", "desc"), limit(50)),
+      : query(
+          postsReference,
+          where("realm", "==", realm),
+          orderBy("createdAt", "desc"),
+          limit(50),
+        ),
   );
 }
 
@@ -183,6 +195,7 @@ export async function fetchFeedPage({
   channel = "all",
   filter = "recent",
   pageSize = 8,
+  realm = "public",
   search = "",
 }: FeedQuery = {}): Promise<FeedPage> {
   const db = getFirebaseDb();
@@ -194,7 +207,7 @@ export async function fetchFeedPage({
     let scanCursor: QueryDocumentSnapshot<DocumentData> | null = null;
 
     while (true) {
-      const searchSnapshot = await fetchPostsBatch(postsReference, scanCursor);
+      const searchSnapshot = await fetchPostsBatch(postsReference, realm, scanCursor);
 
       searchSnapshot.docs
         .map(mapPostSnapshot)
@@ -223,11 +236,17 @@ export async function fetchFeedPage({
   const feedQuery = cursor
     ? query(
         postsReference,
+        where("realm", "==", realm),
         orderBy("createdAt", "desc"),
         startAfter(cursor),
         limit(pageSize),
       )
-    : query(postsReference, orderBy("createdAt", "desc"), limit(pageSize));
+    : query(
+        postsReference,
+        where("realm", "==", realm),
+        orderBy("createdAt", "desc"),
+        limit(pageSize),
+      );
 
   const snapshot = await getDocs(feedQuery);
 
@@ -240,14 +259,17 @@ export async function fetchFeedPage({
   };
 }
 
-export async function fetchPinnedPost(channel: FeedQuery["channel"] = "all") {
+export async function fetchPinnedPost(
+  channel: FeedQuery["channel"] = "all",
+  realm: ForumRealm = "public",
+) {
   const db = getFirebaseDb();
   const postsReference = collection(db, "posts");
   const posts: ForumPost[] = [];
   let scanCursor: QueryDocumentSnapshot<DocumentData> | null = null;
 
   while (true) {
-    const snapshot = await fetchPostsBatch(postsReference, scanCursor);
+    const snapshot = await fetchPostsBatch(postsReference, realm, scanCursor);
 
     snapshot.docs
       .map(mapPostSnapshot)
@@ -268,11 +290,16 @@ export async function fetchPinnedPost(channel: FeedQuery["channel"] = "all") {
   return posts.sort(sortPostsByNewest)[0] ?? null;
 }
 
-export async function fetchPostsByUser(uid: string, pageSize = 12) {
+export async function fetchPostsByUser(
+  uid: string,
+  pageSize = 12,
+  realm: ForumRealm = "public",
+) {
   const snapshot = await getDocs(
     query(
       collection(getFirebaseDb(), "posts"),
       where("author.uid", "==", uid),
+      where("realm", "==", realm),
       orderBy("createdAt", "desc"),
       limit(pageSize),
     ),
@@ -323,6 +350,7 @@ export async function createForumPost(
     likeCount: 0,
     media: parsed.media,
     mediaCount: parsed.media.length,
+    realm: parsed.realm,
     searchKeywords: buildSearchKeywords(
       parsed.channel,
       parsed.title,
@@ -360,6 +388,7 @@ export async function updateForumPost(
     hasMedia: parsed.media.length > 0,
     media: parsed.media,
     mediaCount: parsed.media.length,
+    realm: existingPost.realm,
     searchKeywords: buildSearchKeywords(
       parsed.channel,
       parsed.title,

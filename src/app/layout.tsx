@@ -24,14 +24,14 @@ export const metadata: Metadata = {
     template: "%s | NEST",
   },
   applicationName: "NEST",
-  description: "Réseau clandestin de 2035. Fuites, terrain, matos. Accès par code.",
+  description: "Réseau clandestin de 2035. Forum ouvert, identités forgées, face cachée certifiée.",
   openGraph: {
     type: "website",
     locale: "fr_FR",
     url: "https://zerotrace-forum.web.app",
     siteName: "NEST",
     title: "NEST // Réseau clandestin 2035",
-    description: "Réseau clandestin de 2035. Fuites, terrain, matos. Accès par code.",
+    description: "Réseau clandestin de 2035. Forum ouvert, identités forgées, face cachée certifiée.",
     images: [
       {
         url: "/image.png",
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "NEST // Réseau clandestin 2035",
-    description: "Réseau clandestin de 2035. Fuites, terrain, matos. Accès par code.",
+    description: "Réseau clandestin de 2035. Forum ouvert, identités forgées, face cachée certifiée.",
     images: ["/image.png"],
   },
 };

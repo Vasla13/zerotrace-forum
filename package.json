@@ -10,6 +10,7 @@
     "access:codes": "node scripts/generate-access-codes.mjs",
     "firebase:setup": "node scripts/firebase-setup.mjs",
     "firebase:harden": "node scripts/harden-firebase.mjs",
+    "firebase:backfill:realms": "node scripts/backfill-post-realms.mjs",
     "firebase:deploy": "firebase deploy --only firestore:rules,firestore:indexes,storage",
     "firebase:deploy:hosting": "firebase deploy --only hosting",
     "firebase:deploy:app": "firebase deploy --only apphosting:zerotrace",

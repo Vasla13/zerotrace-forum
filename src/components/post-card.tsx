@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Heart, Pin } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { PostMediaGallery } from "@/components/post-media-gallery";
-import { getForumChannelLabel } from "@/lib/forum/config";
+import { getForumChannelLabel, getForumRealmLabel } from "@/lib/forum/config";
 import type { ForumPost } from "@/lib/types/forum";
 import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
 import { excerpt } from "@/lib/utils/text";
@@ -41,6 +41,12 @@ export function PostCard({ post }: PostCardProps) {
             </span>
             <span className="forum-meta-dot" />
             <span>{getForumChannelLabel(post.channel)}</span>
+            {post.realm === "certified" ? (
+              <>
+                <span className="forum-meta-dot" />
+                <span>{getForumRealmLabel(post.realm)}</span>
+              </>
+            ) : null}
             {post.isPinned ? (
               <>
                 <span className="forum-meta-dot" />

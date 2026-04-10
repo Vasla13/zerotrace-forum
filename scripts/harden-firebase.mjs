@@ -145,6 +145,24 @@ async function backfillLikeCounts(db) {
   return updated;
 }
 
+async function backfillPostRealms(db) {
+  const snapshot = await db.collection("posts").get();
+  let updated = 0;
+
+  for (const postSnapshot of snapshot.docs) {
+    if (typeof postSnapshot.data().realm === "string") {
+      continue;
+    }
+
+    await postSnapshot.ref.update({
+      realm: "public",
+    });
+    updated += 1;
+  }
+
+  return updated;
+}
+
 async function rotateLegacyPasswords(auth) {
   const hashes = readProvisionedHashes();
   let updated = 0;
@@ -179,14 +197,16 @@ const app = getFirebaseAdminApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const [createdAccessCodes, scrubbedUsers, updatedPosts, rotatedPasswords] = await Promise.all([
+const [createdAccessCodes, scrubbedUsers, updatedPosts, updatedPostRealms, rotatedPasswords] = await Promise.all([
   syncLegacyAccessCodes(db),
   scrubUserEmails(db),
   backfillLikeCounts(db),
+  backfillPostRealms(db),
   rotateLegacyPasswords(auth),
 ]);
 
 console.log(`Codes legacy importes: ${createdAccessCodes}`);
 console.log(`Profils nettoyes: ${scrubbedUsers}`);
 console.log(`Posts avec likeCount corrige: ${updatedPosts}`);
+console.log(`Posts avec realm public ajoute: ${updatedPostRealms}`);
 console.log(`Mots de passe herites rotates: ${rotatedPasswords}`);

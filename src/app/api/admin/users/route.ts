@@ -13,6 +13,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       users.map((user) => ({
         ...user,
+        certificationRequestedAt:
+          user.certificationRequestedAt?.toISOString() ?? null,
+        certifiedAt: user.certifiedAt?.toISOString() ?? null,
         createdAt: user.createdAt?.toISOString() ?? null,
       })),
     );

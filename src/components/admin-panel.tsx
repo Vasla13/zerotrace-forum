@@ -4,11 +4,10 @@ import Link from "next/link";
 import { useDeferredValue, useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 import {
-  Copy,
   Flag,
-  KeyRound,
   Search,
   Shield,
+  ShieldCheck,
   Trash2,
   UserRound,
 } from "lucide-react";
@@ -17,51 +16,57 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { InputShell } from "@/components/input-shell";
 import {
-  deleteAdminAccessCode,
   deleteAdminReport,
   deleteAdminUser,
-  fetchAdminAccessCodes,
   fetchAdminReports,
   fetchAdminSession,
   fetchAdminUsers,
-  generateAdminAccessCodes,
-  setAdminAccessCodeRevoked,
   setAdminReportResolved,
+  setAdminUserCertification,
   setAdminUserRole,
 } from "@/lib/data/admin";
 import type {
-  AdminAccessCodeSummary,
   AdminReportSummary,
   AdminSession,
   AdminUserSummary,
-  GeneratedAdminAccessCode,
 } from "@/lib/types/admin";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getErrorMessage } from "@/lib/utils/errors";
 import { useAuth } from "@/providers/auth-provider";
 import { toast } from "sonner";
 
-type AdminTab = "users" | "codes" | "reports";
+type AdminTab = "users" | "certifications" | "reports";
 
 type AdminDialogState =
   | { kind: "delete-user"; target: AdminUserSummary }
-  | { kind: "delete-code"; target: AdminAccessCodeSummary }
   | { kind: "delete-report"; target: AdminReportSummary }
   | null;
+
+function formatAdminDate(value: string | null) {
+  return value ? formatAbsoluteDate(new Date(value)) : "date inconnue";
+}
+
+function CertificationBadge({ user }: { user: AdminUserSummary }) {
+  if (user.certificationStatus === "approved") {
+    return <span className="forum-pill">certifié</span>;
+  }
+
+  if (user.certificationStatus === "pending") {
+    return <span className="forum-pill">en attente</span>;
+  }
+
+  return null;
+}
 
 function AdminPanelInner() {
   const { configured, loading: authLoading, user } = useAuth();
   const [activeTab, setActiveTab] = useState<AdminTab>("users");
   const [session, setSession] = useState<AdminSession | null>(null);
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
-  const [accessCodes, setAccessCodes] = useState<AdminAccessCodeSummary[]>([]);
   const [reports, setReports] = useState<AdminReportSummary[]>([]);
-  const [generatedCodes, setGeneratedCodes] = useState<GeneratedAdminAccessCode[]>([]);
   const [searchInput, setSearchInput] = useState("");
-  const [noteInput, setNoteInput] = useState("");
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [loadingCodes, setLoadingCodes] = useState(false);
   const [loadingReports, setLoadingReports] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [accessDenied, setAccessDenied] = useState(false);
@@ -82,22 +87,6 @@ function AdminPanelInner() {
       toast.error(getErrorMessage(error));
     } finally {
       setLoadingUsers(false);
-    }
-  }
-
-  async function loadAccessCodes() {
-    if (!user) {
-      return;
-    }
-
-    setLoadingCodes(true);
-
-    try {
-      setAccessCodes(await fetchAdminAccessCodes(user));
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setLoadingCodes(false);
     }
   }
 
@@ -137,9 +126,8 @@ function AdminPanelInner() {
         setSession(nextSession);
         setAccessDenied(false);
 
-        const [nextUsers, nextAccessCodes, nextReports] = await Promise.all([
+        const [nextUsers, nextReports] = await Promise.all([
           fetchAdminUsers(currentUser, ""),
-          fetchAdminAccessCodes(currentUser),
           fetchAdminReports(currentUser),
         ]);
 
@@ -148,7 +136,6 @@ function AdminPanelInner() {
         }
 
         setUsers(nextUsers);
-        setAccessCodes(nextAccessCodes);
         setReports(nextReports);
       } catch (error) {
         if (!active) {
@@ -157,7 +144,6 @@ function AdminPanelInner() {
 
         setSession(null);
         setUsers([]);
-        setAccessCodes([]);
         setReports([]);
         setAccessDenied(true);
         toast.error(getErrorMessage(error));
@@ -233,6 +219,31 @@ function AdminPanelInner() {
     }
   }
 
+  async function handleCertification(
+    target: AdminUserSummary,
+    certificationStatus: "approved" | "none",
+  ) {
+    if (!user) {
+      return;
+    }
+
+    setBusyAction(`user:cert:${target.uid}`);
+
+    try {
+      await setAdminUserCertification(user, target.uid, certificationStatus);
+      toast.success(
+        certificationStatus === "approved"
+          ? `${target.username} est certifié.`
+          : `Certification retirée pour ${target.username}.`,
+      );
+      await loadUsers();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   async function handleDeleteUser(target: AdminUserSummary) {
     if (!user) {
       return;
@@ -243,76 +254,7 @@ function AdminPanelInner() {
     try {
       await deleteAdminUser(user, target.uid);
       toast.success(`Compte supprimé : ${target.username}.`);
-      await Promise.all([loadUsers(), loadAccessCodes(), loadReports()]);
-      setDialogState(null);
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setBusyAction(null);
-    }
-  }
-
-  async function handleGenerateCodes() {
-    if (!user) {
-      return;
-    }
-
-    setBusyAction("codes:generate");
-
-    try {
-      const nextCodes = await generateAdminAccessCodes(user, {
-        count: 1,
-        note: noteInput,
-      });
-      setGeneratedCodes(nextCodes);
-      setNoteInput("");
-      toast.success("Nouveau code généré.");
-      await loadAccessCodes();
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setBusyAction(null);
-    }
-  }
-
-  async function handleCopyCode(value: string) {
-    try {
-      await navigator.clipboard.writeText(value);
-      toast.success("Code copié.");
-    } catch {
-      toast.error("Impossible de copier le code.");
-    }
-  }
-
-  async function handleToggleCode(accessCode: AdminAccessCodeSummary) {
-    if (!user) {
-      return;
-    }
-
-    setBusyAction(`code:${accessCode.hash}`);
-
-    try {
-      await setAdminAccessCodeRevoked(user, accessCode.hash, !accessCode.revoked);
-      toast.success(accessCode.revoked ? "Code réactivé." : "Code révoqué.");
-      await loadAccessCodes();
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setBusyAction(null);
-    }
-  }
-
-  async function handleDeleteCode(accessCode: AdminAccessCodeSummary) {
-    if (!user) {
-      return;
-    }
-
-    setBusyAction(`code:delete:${accessCode.hash}`);
-
-    try {
-      await deleteAdminAccessCode(user, accessCode.hash);
-      toast.success("Code supprimé.");
-      await loadAccessCodes();
+      await Promise.all([loadUsers(), loadReports()]);
       setDialogState(null);
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -386,6 +328,10 @@ function AdminPanelInner() {
     );
   }
 
+  const certificationUsers = users.filter(
+    (target) => target.certificationStatus !== "none",
+  );
+
   return (
     <div className="forum-grid mx-auto w-full max-w-6xl">
       <section className="forum-card p-6 sm:p-8">
@@ -415,11 +361,16 @@ function AdminPanelInner() {
           <button
             type="button"
             onClick={() => {
-              setActiveTab("codes");
+              setActiveTab("certifications");
             }}
-            className={activeTab === "codes" ? "forum-button-primary" : "forum-button-ghost"}
+            className={
+              activeTab === "certifications"
+                ? "forum-button-primary"
+                : "forum-button-ghost"
+            }
           >
-            Codes ({accessCodes.length})
+            Certifications (
+            {users.filter((target) => target.certificationStatus === "pending").length})
           </button>
           <button
             type="button"
@@ -467,6 +418,7 @@ function AdminPanelInner() {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-semibold text-white">{target.username}</span>
                         {target.isAdmin ? <span className="forum-pill">admin</span> : null}
+                        <CertificationBadge user={target} />
                         {target.isBootstrapAdmin ? (
                           <span className="forum-inline-note">bootstrap</span>
                         ) : null}
@@ -474,12 +426,7 @@ function AdminPanelInner() {
                       <div className="forum-meta-line mt-3">
                         <span>{target.postCount} post(s)</span>
                         <span className="forum-meta-dot" />
-                        <span>
-                          inscrit le{" "}
-                          {target.createdAt
-                            ? formatAbsoluteDate(new Date(target.createdAt))
-                            : "date inconnue"}
-                        </span>
+                        <span>inscrit le {formatAdminDate(target.createdAt)}</span>
                         <span className="forum-meta-dot" />
                         <span>{target.uid.slice(0, 8)}</span>
                       </div>
@@ -496,6 +443,22 @@ function AdminPanelInner() {
                       >
                         <UserRound className="mr-2 h-4 w-4" />
                         {target.isAdmin ? "Retirer admin" : "Promouvoir admin"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleCertification(
+                            target,
+                            target.certificationStatus === "approved" ? "none" : "approved",
+                          );
+                        }}
+                        disabled={busyAction === `user:cert:${target.uid}`}
+                        className="forum-button-ghost"
+                      >
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        {target.certificationStatus === "approved"
+                          ? "Retirer certif"
+                          : "Certifier"}
                       </button>
                       <button
                         type="button"
@@ -520,176 +483,100 @@ function AdminPanelInner() {
         </section>
       ) : null}
 
-      {activeTab === "codes" ? (
+      {activeTab === "certifications" ? (
         <section className="forum-card p-6 sm:p-7">
           <div className="forum-section-head">
             <div>
-              <h2 className="forum-title mt-4 text-3xl sm:text-4xl">Codes d’accès</h2>
+              <h2 className="forum-title mt-4 text-3xl sm:text-4xl">Certifications</h2>
               <div className="forum-meta-line mt-3">
-                <span>{accessCodes.length} code(s)</span>
+                <span>{certificationUsers.length} dossier(s)</span>
               </div>
             </div>
           </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
-            <label className="grid gap-2">
-              <span className="forum-inline-note">note</span>
-              <input
-                className="forum-input"
-                placeholder="ex: test avril"
-                value={noteInput}
-                onChange={(event) => {
-                  setNoteInput(event.target.value);
-                }}
-              />
-            </label>
-
-            <div className="flex items-end">
-              <button
-                type="button"
-                onClick={() => {
-                  void handleGenerateCodes();
-                }}
-                disabled={busyAction === "codes:generate"}
-                className="forum-button-primary"
-              >
-                <KeyRound className="mr-2 h-4 w-4" />
-                {busyAction === "codes:generate" ? "Création…" : "Nouveau code"}
-              </button>
-            </div>
-          </div>
-
-          {generatedCodes.length ? (
-            <div className="forum-card-quiet mt-6 p-5">
-              <div className="forum-inline-note">copie ce code maintenant</div>
-              <div className="mt-4 grid gap-3">
-                {generatedCodes.map((code) => (
-                  <div
-                    key={code.hash}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded border border-[color:var(--line)] bg-black/30 px-3 py-3"
-                  >
-                    <code className="text-sm text-[color:var(--foreground)]">
-                      {code.code}
-                    </code>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void handleCopyCode(code.code);
-                      }}
-                      className="forum-button-ghost"
-                    >
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copier
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
 
           <div className="mt-8 grid gap-4">
-            {loadingCodes ? (
+            {loadingUsers ? (
               <div className="forum-card-quiet p-5 text-sm">Chargement…</div>
-            ) : accessCodes.length ? (
-              accessCodes.map((accessCode) => {
-                const accessCodeValue = accessCode.code;
+            ) : certificationUsers.length ? (
+              certificationUsers
+                .sort((firstUser, secondUser) => {
+                  if (
+                    firstUser.certificationStatus === "pending" &&
+                    secondUser.certificationStatus !== "pending"
+                  ) {
+                    return -1;
+                  }
 
-                return (
-                  <article key={accessCode.hash} className="forum-card-quiet p-5">
+                  if (
+                    secondUser.certificationStatus === "pending" &&
+                    firstUser.certificationStatus !== "pending"
+                  ) {
+                    return 1;
+                  }
+
+                  return (secondUser.createdAt ?? "").localeCompare(firstUser.createdAt ?? "");
+                })
+                .map((target) => (
+                  <article key={target.uid} className="forum-card-quiet p-5">
                     <div className="forum-section-head items-start">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-semibold text-white">
-                            {accessCode.note || accessCode.fingerprint}
-                          </span>
-                          {accessCode.revoked ? (
-                            <span className="forum-pill">révoqué</span>
-                          ) : (
-                            <span className="forum-pill">actif</span>
-                          )}
+                          <span className="font-semibold text-white">{target.username}</span>
+                          <CertificationBadge user={target} />
                         </div>
                         <div className="forum-meta-line mt-3">
-                          <span>id {accessCode.fingerprint}</span>
-                          <span className="forum-meta-dot" />
-                          <span>
-                            créé le{" "}
-                            {accessCode.createdAt
-                              ? formatAbsoluteDate(new Date(accessCode.createdAt))
-                              : "date inconnue"}
-                          </span>
-                          {accessCode.usedByUsername ? (
+                          {target.certificationRequestedAt ? (
                             <>
+                              <span>
+                                demandé le {formatAdminDate(target.certificationRequestedAt)}
+                              </span>
                               <span className="forum-meta-dot" />
-                              <span>utilisé par {accessCode.usedByUsername}</span>
                             </>
                           ) : null}
-                        </div>
-                        <div className="mt-4 flex flex-wrap items-center gap-3">
-                          {accessCodeValue ? (
+                          {target.certifiedAt ? (
                             <>
-                              <code className="rounded border border-[color:var(--line)] bg-black/30 px-3 py-2 text-sm text-[color:var(--foreground)]">
-                                {accessCodeValue}
-                              </code>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  void handleCopyCode(accessCodeValue);
-                                }}
-                                className="forum-button-ghost"
-                              >
-                                <Copy className="mr-2 h-4 w-4" />
-                                Copier
-                              </button>
+                              <span>
+                                validé le {formatAdminDate(target.certifiedAt)}
+                              </span>
+                              <span className="forum-meta-dot" />
                             </>
-                          ) : (
-                            <span className="forum-inline-note">
-                              ancien code, non récupérable
-                            </span>
-                          )}
+                          ) : null}
+                          <span>{target.postCount} post(s)</span>
                         </div>
                       </div>
 
                       <div className="forum-toolbar">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            void handleToggleCode(accessCode);
-                          }}
-                          disabled={
-                            busyAction === `code:${accessCode.hash}` ||
-                            busyAction === `code:delete:${accessCode.hash}`
-                          }
-                          className="forum-button-ghost"
-                        >
-                          {accessCode.revoked ? "Réactiver" : "Révoquer"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setDialogState({ kind: "delete-code", target: accessCode });
-                          }}
-                          disabled={
-                            busyAction === `code:${accessCode.hash}` ||
-                            busyAction === `code:delete:${accessCode.hash}` ||
-                            Boolean(accessCode.usedByUsername)
-                          }
-                          className="forum-button-icon forum-button-icon-danger"
-                          aria-label={`Supprimer le code ${accessCode.note || accessCode.fingerprint}`}
-                          title={
-                            accessCode.usedByUsername
-                              ? "Supprime d’abord le compte lié à ce code"
-                              : "Supprimer le code"
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {target.certificationStatus !== "approved" ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void handleCertification(target, "approved");
+                            }}
+                            disabled={busyAction === `user:cert:${target.uid}`}
+                            className="forum-button-primary"
+                          >
+                            Valider
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void handleCertification(target, "none");
+                            }}
+                            disabled={busyAction === `user:cert:${target.uid}`}
+                            className="forum-button-ghost"
+                          >
+                            Retirer
+                          </button>
+                        )}
                       </div>
                     </div>
                   </article>
-                );
-              })
+                ))
             ) : (
-              <div className="forum-card-quiet p-5 text-sm">Aucun code enregistré.</div>
+              <div className="forum-card-quiet p-5 text-sm">
+                Aucune demande de certification pour le moment.
+              </div>
             )}
           </div>
         </section>
@@ -730,11 +617,7 @@ function AdminPanelInner() {
                       <div className="forum-meta-line mt-3">
                         <span>signalé par {report.reportedByUsername}</span>
                         <span className="forum-meta-dot" />
-                        <span>
-                          {report.createdAt
-                            ? formatAbsoluteDate(new Date(report.createdAt))
-                            : "date inconnue"}
-                        </span>
+                        <span>{formatAdminDate(report.createdAt)}</span>
                       </div>
                       {report.postTitle ? (
                         <div className="mt-4 text-sm font-semibold text-white">
@@ -747,10 +630,7 @@ function AdminPanelInner() {
                     </div>
 
                     <div className="forum-toolbar">
-                      <Link
-                        href={`/posts/${report.postId}`}
-                        className="forum-button-ghost"
-                      >
+                      <Link href={`/posts/${report.postId}`} className="forum-button-ghost">
                         <Flag className="mr-2 h-4 w-4" />
                         Ouvrir
                       </Link>
@@ -798,29 +678,23 @@ function AdminPanelInner() {
         title={
           dialogState?.kind === "delete-user"
             ? "Supprimer ce compte ?"
-            : dialogState?.kind === "delete-code"
-              ? "Supprimer ce code ?"
-              : "Supprimer ce signalement ?"
+            : "Supprimer ce signalement ?"
         }
         description={
           dialogState?.kind === "delete-user"
             ? `Le compte ${dialogState.target.username} sera supprimé. Ses posts, réponses et likes resteront visibles.`
-            : dialogState?.kind === "delete-code"
-              ? `Le code ${dialogState.target.note || dialogState.target.fingerprint} sera supprimé définitivement.`
-              : dialogState?.kind === "delete-report"
-                ? "Le signalement sera retiré de la file admin."
-                : ""
+            : dialogState?.kind === "delete-report"
+              ? "Le signalement sera retiré de la file admin."
+              : ""
         }
         confirmLabel="Supprimer"
         tone="danger"
         busy={
           dialogState?.kind === "delete-user"
             ? busyAction === `user:delete:${dialogState.target.uid}`
-            : dialogState?.kind === "delete-code"
-              ? busyAction === `code:delete:${dialogState.target.hash}`
-              : dialogState?.kind === "delete-report"
-                ? busyAction === `report:delete:${dialogState.target.id}`
-                : false
+            : dialogState?.kind === "delete-report"
+              ? busyAction === `report:delete:${dialogState.target.id}`
+              : false
         }
         onClose={() => {
           if (!busyAction) {
@@ -830,11 +704,6 @@ function AdminPanelInner() {
         onConfirm={() => {
           if (dialogState?.kind === "delete-user") {
             void handleDeleteUser(dialogState.target);
-            return;
-          }
-
-          if (dialogState?.kind === "delete-code") {
-            void handleDeleteCode(dialogState.target);
             return;
           }
 

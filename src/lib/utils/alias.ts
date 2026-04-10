@@ -1,47 +1,55 @@
 const handlePrefixes = [
-  "Aube",
-  "Brume",
-  "Craie",
-  "Feral",
-  "Flamme",
-  "Foudre",
-  "Lichen",
-  "Louve",
-  "Marais",
-  "Mistral",
-  "Noire",
-  "Ombre",
-  "Ronce",
-  "Rouille",
-  "Silex",
-  "Source",
-  "Vaste",
-  "Velours",
-  "Vif",
-  "Volt",
+  "Audit",
+  "Bureau",
+  "Cabinet",
+  "Cellule",
+  "Censeur",
+  "Comite",
+  "Comptable",
+  "Controle",
+  "DRH",
+  "Greffier",
+  "Huissier",
+  "Mairie",
+  "Notaire",
+  "Parcmetre",
+  "Prefet",
+  "Procureur",
+  "Recteur",
+  "Service",
+  "SousPrefet",
+  "Stagiaire",
+  "Syndicat",
+  "Brigade",
+  "Directoire",
+  "Archiviste",
 ] as const;
 
 const handleSuffixes = [
-  "Brute",
-  "Cendre",
-  "Claire",
-  "Dorsale",
-  "Furtive",
-  "Libre",
-  "Limite",
-  "Mirage",
-  "Mobile",
-  "Nomade",
-  "Oblique",
-  "Piste",
-  "Rasoir",
-  "Rive",
-  "Sauvage",
-  "Silence",
-  "Sombre",
-  "Veille",
-  "Vive",
-  "Volte",
+  "Apathique",
+  "Binaire",
+  "Carnivore",
+  "Cafardeux",
+  "Corpo",
+  "Dechet",
+  "DuVide",
+  "Feral",
+  "Funebre",
+  "Morbide",
+  "Nocturne",
+  "Nucleaire",
+  "Obese",
+  "Radin",
+  "Rance",
+  "Routinier",
+  "Rouille",
+  "Sinistre",
+  "Spectral",
+  "Subtil",
+  "Terminal",
+  "Vermine",
+  "Becane",
+  "Deregule",
 ] as const;
 
 function hashSeed(seed: string) {
@@ -61,17 +69,25 @@ function pick<T>(values: readonly T[], seed: number) {
 
 export function generateNodeAlias(seed = `${Date.now()}-${Math.random()}`) {
   const hashed = hashSeed(seed);
-  const prefix = pick(handlePrefixes, hashed);
-  const suffix = pick(handleSuffixes, hashed >>> 5);
   const serial = String((hashed % 89) + 11).padStart(2, "0");
 
-  return `${prefix}${suffix}_${serial}`;
+  for (let index = 0; index < handlePrefixes.length * 2; index += 1) {
+    const prefix = pick(handlePrefixes, hashed + index);
+    const suffix = pick(handleSuffixes, (hashed >>> 5) + index * 3);
+    const alias = `${prefix}${suffix}_${serial}`;
+
+    if (alias.length <= 24) {
+      return alias;
+    }
+  }
+
+  return `BureauRance_${serial}`;
 }
 
 export function generateAliasBundle(seed: string, count = 5) {
   const aliases = new Set<string>();
 
-  for (let index = 0; aliases.size < count && index < count * 6; index += 1) {
+  for (let index = 0; aliases.size < count && index < count * 8; index += 1) {
     aliases.add(generateNodeAlias(`${seed}:${index}`));
   }
 
@@ -79,7 +95,7 @@ export function generateAliasBundle(seed: string, count = 5) {
 }
 
 export function isAnonymousAlias(value: string) {
-  return /^(aube|brume|feral|flamme|foudre|louve|ombre|ronce|rouille|volt)/i.test(
-    value,
+  return handlePrefixes.some((prefix) =>
+    value.toLowerCase().startsWith(prefix.toLowerCase()),
   );
 }

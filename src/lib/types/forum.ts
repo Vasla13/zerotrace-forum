@@ -3,6 +3,7 @@ import type {
   ForumChannel,
   ForumFeedFilter,
   ForumPostDisplayMode,
+  ForumRealm,
 } from "@/lib/forum/config";
 
 export type ForumAuthor = {
@@ -12,8 +13,13 @@ export type ForumAuthor = {
   usernameLower: string;
 };
 
+export type ForumCertificationStatus = "none" | "pending" | "approved";
+
 export type ForumUserProfile = {
   avatarUrl: string | null;
+  certificationRequestedAt: Date | null;
+  certificationStatus: ForumCertificationStatus;
+  certifiedAt: Date | null;
   uid: string;
   username: string;
   usernameLower: string;
@@ -36,6 +42,7 @@ export type ForumPost = {
   likeCount: number;
   isPinned: boolean;
   media: ForumPostMedia[];
+  realm: ForumRealm;
   searchKeywords: string[];
   title: string;
   updatedAt: Date | null;
@@ -63,6 +70,7 @@ export type FeedQuery = {
   cursor?: QueryDocumentSnapshot<DocumentData> | null;
   filter?: ForumFeedFilter;
   pageSize?: number;
+  realm?: ForumRealm;
   search?: string;
 };
 

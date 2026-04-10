@@ -7,6 +7,18 @@ export const forumChannelValues = [
 
 export type ForumChannel = (typeof forumChannelValues)[number];
 
+export const forumRealmValues = [
+  "public",
+  "certified",
+] as const;
+
+export type ForumRealm = (typeof forumRealmValues)[number];
+
+export const forumRealmLabels: Record<ForumRealm, string> = {
+  certified: "Face cachée",
+  public: "Réseau ouvert",
+};
+
 export const forumChannelLabels: Record<ForumChannel, string> = {
   general: "Général",
   fuites: "Fuites",
@@ -39,6 +51,10 @@ export const forumPostDisplayModeLabels: Record<ForumPostDisplayMode, string> = 
   media: "Carte média",
   standard: "Post",
 };
+
+export function getForumRealmLabel(realm: ForumRealm) {
+  return forumRealmLabels[realm];
+}
 
 export function getForumChannelLabel(channel: ForumChannel) {
   return forumChannelLabels[channel];

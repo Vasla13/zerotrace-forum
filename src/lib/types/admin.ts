@@ -6,6 +6,9 @@ export type AdminSession = {
 };
 
 export type AdminUserSummary = {
+  certificationRequestedAt: string | null;
+  certificationStatus: "none" | "pending" | "approved";
+  certifiedAt: string | null;
   createdAt: string | null;
   isAdmin: boolean;
   isBootstrapAdmin: boolean;

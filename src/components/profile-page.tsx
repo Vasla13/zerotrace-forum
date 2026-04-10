@@ -15,6 +15,7 @@ import {
   deleteForumProfile,
   getUserPostCount,
   getUserProfileByUsername,
+  requestForumCertification,
   signOutForumUser,
   updateForumProfile,
 } from "@/lib/data/users";
@@ -133,6 +134,7 @@ export function ProfilePage({ username }: ProfilePageProps) {
   const [loading, setLoading] = useState(true);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [isSavingUsername, setIsSavingUsername] = useState(false);
+  const [isRequestingCertification, setIsRequestingCertification] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -363,6 +365,33 @@ export function ProfilePage({ username }: ProfilePageProps) {
     }
   }
 
+  async function handleRequestCertification(isCurrentUser: boolean) {
+    if (!user || !profile || !isCurrentUser) {
+      return;
+    }
+
+    setIsRequestingCertification(true);
+
+    try {
+      await requestForumCertification(user);
+      setProfile((current) =>
+        current
+          ? {
+              ...current,
+              certificationRequestedAt: new Date(),
+              certificationStatus: "pending",
+              certifiedAt: null,
+            }
+          : current,
+      );
+      toast.success("Demande de certification envoyée.");
+    } catch (requestError) {
+      toast.error(getErrorMessage(requestError));
+    } finally {
+      setIsRequestingCertification(false);
+    }
+  }
+
   if (!configured) {
     return <ForumSetupNotice />;
   }
@@ -449,8 +478,14 @@ export function ProfilePage({ username }: ProfilePageProps) {
                   <strong>{mediaPosts.length}</strong>
                 </div>
                 <div className="forum-stat-chip">
-                  <span>accès</span>
-                  <strong>{isCurrentUser ? "toi" : "public"}</strong>
+                  <span>niveau</span>
+                  <strong>
+                    {profile.certificationStatus === "approved"
+                      ? "certifié"
+                      : isCurrentUser
+                        ? "standard"
+                        : "public"}
+                  </strong>
                 </div>
               </div>
             </div>
@@ -689,6 +724,45 @@ export function ProfilePage({ username }: ProfilePageProps) {
                         <ShieldAlert className="mr-2 h-4 w-4" />
                         Supprimer mon compte
                       </button>
+                    </div>
+                  </article>
+
+                  <article className="forum-card-quiet p-5 sm:p-6">
+                    <div className="forum-inline-note">certification</div>
+                    <p className="forum-muted mt-4 text-sm leading-7">
+                      {profile.certificationStatus === "approved"
+                        ? "Ton identité est certifiée. Une couche supplémentaire du réseau est ouverte."
+                        : profile.certificationStatus === "pending"
+                          ? "La demande est en file admin. Rien d’autre à faire pour le moment."
+                          : "Demande une certification si tu veux faire valider ton identité."}
+                    </p>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      {profile.certificationStatus === "approved" ? (
+                        <Link href="/face-cachee" className="forum-button-primary">
+                          Ouvrir la face cachée
+                        </Link>
+                      ) : profile.certificationStatus === "pending" ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="forum-button-ghost"
+                        >
+                          Demande envoyée
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleRequestCertification(isCurrentUser);
+                          }}
+                          disabled={isRequestingCertification}
+                          className="forum-button-primary"
+                        >
+                          {isRequestingCertification
+                            ? "Envoi…"
+                            : "Demander la certification"}
+                        </button>
+                      )}
                     </div>
                   </article>
                 </>

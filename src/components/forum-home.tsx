@@ -9,25 +9,33 @@ import {
   Pin,
   Plus,
   Search,
+  ShieldAlert,
   X,
 } from "lucide-react";
 import { ForumSetupNotice } from "@/components/forum-setup-notice";
 import { InputShell } from "@/components/input-shell";
 import { PostCard } from "@/components/post-card";
+import { RealmTheme } from "@/components/realm-theme";
 import {
   forumChannelLabels,
   forumChannelValues,
   forumFeedFilterLabels,
   forumFeedFilterValues,
+  forumRealmLabels,
   type ForumFeedFilter,
+  type ForumRealm,
 } from "@/lib/forum/config";
 import { fetchFeedPage, fetchPinnedPost } from "@/lib/data/posts";
 import type { FeedChannelFilter, ForumPost } from "@/lib/types/forum";
 import { getErrorMessage } from "@/lib/utils/errors";
 import { useAuth } from "@/providers/auth-provider";
 
-export function ForumHome() {
-  const { configured, user } = useAuth();
+type ForumHomeProps = {
+  realm?: ForumRealm;
+};
+
+export function ForumHome({ realm = "public" }: ForumHomeProps) {
+  const { canAccessShadow, configured, user } = useAuth();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchInput, setSearchInput] = useState("");
   const [activeFilter, setActiveFilter] = useState<ForumFeedFilter>("recent");
@@ -46,9 +54,11 @@ export function ForumHome() {
   const isSearching = deferredSearch.length > 0;
   const canPaginate =
     !isSearching && activeFilter === "recent" && activeChannel === "all";
+  const isShadowRealm = realm === "certified";
+  const composeHref = user ? `/posts/new?realm=${realm}` : "/login";
 
   useEffect(() => {
-    if (!configured) {
+    if (!configured || (isShadowRealm && !canAccessShadow)) {
       return;
     }
 
@@ -63,9 +73,10 @@ export function ForumHome() {
             channel: activeChannel,
             filter: activeFilter,
             pageSize: 8,
+            realm,
             search: deferredSearch,
           }),
-          isSearching ? Promise.resolve(null) : fetchPinnedPost(activeChannel),
+          isSearching ? Promise.resolve(null) : fetchPinnedPost(activeChannel, realm),
         ]);
 
         if (!active) {
@@ -99,7 +110,17 @@ export function ForumHome() {
     return () => {
       active = false;
     };
-  }, [activeChannel, activeFilter, canPaginate, configured, deferredSearch, isSearching]);
+  }, [
+    activeChannel,
+    activeFilter,
+    canAccessShadow,
+    canPaginate,
+    configured,
+    deferredSearch,
+    isSearching,
+    isShadowRealm,
+    realm,
+  ]);
 
   useEffect(() => {
     const focusSearch = () => {
@@ -138,6 +159,7 @@ export function ForumHome() {
       const nextPage = await fetchFeedPage({
         cursor,
         pageSize: 8,
+        realm,
       });
 
       setPosts((currentPosts) => [...currentPosts, ...nextPage.posts]);
@@ -160,31 +182,89 @@ export function ForumHome() {
     : posts;
   const resultLabel = `${visiblePosts.length} ${visiblePosts.length > 1 ? "résultats" : "résultat"}`;
 
+  if (isShadowRealm && !canAccessShadow) {
+    return (
+      <div className="forum-grid w-full">
+        <RealmTheme realm="certified" />
+        <section className="forum-card mx-auto w-full max-w-4xl p-6 text-center sm:p-8">
+          <span className="forum-pill">Face cachée</span>
+          <h1 className="forum-title mt-5 text-4xl sm:text-5xl">
+            Certification requise
+          </h1>
+          <p className="forum-muted mt-4 text-sm leading-7">
+            Cette couche rouge n’est ouverte qu’aux identités certifiées par l’admin.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link href="/" className="forum-button-ghost">
+              Retour au forum
+            </Link>
+            {user ? (
+              <Link href="/settings" className="forum-button-primary">
+                Demander la certification
+              </Link>
+            ) : (
+              <Link href="/login" className="forum-button-primary">
+                Forger une identité
+              </Link>
+            )}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="forum-grid w-full">
+      <RealmTheme realm={realm} />
+
       <section className="forum-card forum-command-panel p-6 sm:p-7">
         <div className="forum-command-head">
           <div className="forum-command-copy">
-            <span className="forum-pill">Feed</span>
-            <h1 className="forum-title mt-4 text-4xl sm:text-5xl">NEST</h1>
+            <span className="forum-pill">{forumRealmLabels[realm]}</span>
+            <h1 className="forum-title mt-4 text-4xl sm:text-5xl">
+              {isShadowRealm ? "Face cachée" : "NEST"}
+            </h1>
             <p className="forum-muted mt-3 max-w-2xl text-sm leading-7">
-              {user
-                ? "Flux actif. Trie, filtre, publie."
-                : "Lecture ouverte. Accès requis pour publier."}
+              {isShadowRealm
+                ? "Canal rouge. Fuites internes, traces anti-corpo et matière sensible."
+                : user
+                  ? "Forum ouvert. Trie, scanne, publie."
+                  : "Forum ouvert. Forge une identité pour publier et répondre."}
             </p>
           </div>
 
           <div className="forum-toolbar">
-            {user ? (
-              <Link href="/posts/new" className="forum-button-primary">
-                <Plus className="mr-2 h-4 w-4" />
-                Publier
-              </Link>
-            ) : (
-              <Link href="/login" className="forum-button-primary">
-                Accès
-              </Link>
-            )}
+            {canAccessShadow ? (
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href="/"
+                  className={
+                    !isShadowRealm ? "forum-button-secondary" : "forum-button-ghost"
+                  }
+                >
+                  Forum
+                </Link>
+                <Link
+                  href="/face-cachee"
+                  className={
+                    isShadowRealm ? "forum-button-secondary" : "forum-button-ghost"
+                  }
+                >
+                  Face cachée
+                </Link>
+              </div>
+            ) : null}
+
+            <Link href={composeHref} className="forum-button-primary">
+              {user ? (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Publier
+                </>
+              ) : (
+                "Entrer"
+              )}
+            </Link>
           </div>
         </div>
 
@@ -194,7 +274,11 @@ export function ForumHome() {
               id="feed-search"
               ref={searchInputRef}
               icon={Search}
-              placeholder="Rechercher un post, un sujet, un pseudo…"
+              placeholder={
+                isShadowRealm
+                  ? "Rechercher une fuite, un nom, un dossier…"
+                  : "Rechercher un post, un sujet, un pseudo…"
+              }
               type="search"
               value={searchInput}
               onChange={(event) => {
@@ -279,10 +363,10 @@ export function ForumHome() {
             <div>
               <span className="forum-pill">
                 <Pin className="h-3.5 w-3.5" />
-                Épinglé
+                {isShadowRealm ? "Signal rouge" : "Épinglé"}
               </span>
               <h2 className="forum-title mt-4 text-3xl sm:text-4xl">
-                Annonce active
+                {isShadowRealm ? "Dossier chaud" : "Annonce active"}
               </h2>
             </div>
           </div>
@@ -300,14 +384,14 @@ export function ForumHome() {
               {isSearching ? "Recherche" : forumFeedFilterLabels[activeFilter]}
             </span>
             <h2 className="forum-title mt-4 text-3xl sm:text-4xl">
-              {isSearching ? "Résultats" : "Flux"}
+              {isSearching ? "Résultats" : isShadowRealm ? "Flux rouge" : "Flux"}
             </h2>
             <div className="forum-meta-line mt-3">
               <span>
                 {isSearching
                   ? resultLabel
                   : activeFilter === "popular"
-                    ? "classé par likes"
+                    ? "classé par impact"
                     : activeFilter === "media"
                       ? "posts avec image ou vidéo"
                       : "du plus récent au plus ancien"}
@@ -359,20 +443,20 @@ export function ForumHome() {
           </>
         ) : (
           <div className="forum-card-quiet mt-8 flex flex-col items-center justify-center px-6 py-10 text-center">
-            <h3 className="forum-title text-2xl sm:text-3xl">
+            <ShieldAlert className="h-7 w-7 text-[color:var(--accent)]" />
+            <h3 className="forum-title mt-4 text-2xl sm:text-3xl">
               {isSearching ? "Aucun résultat" : "Aucun post"}
             </h3>
             <p className="forum-muted mt-3 max-w-xl text-sm">
               {isSearching
                 ? "Essaie un autre mot-clé ou change de canal."
-                : "Le canal est vide pour le moment."}
+                : isShadowRealm
+                  ? "Aucune fuite n’est remontée dans cette couche pour le moment."
+                  : "Le canal est vide pour le moment."}
             </p>
             <div className="mt-6">
-              <Link
-                href={user ? "/posts/new" : "/login"}
-                className="forum-button-primary"
-              >
-                {user ? "Publier" : "Accès"}
+              <Link href={composeHref} className="forum-button-primary">
+                {user ? "Publier" : "Entrer"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>

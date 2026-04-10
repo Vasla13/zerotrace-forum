@@ -52,6 +52,27 @@ body {
   min-height: 100vh;
 }
 
+body[data-forum-realm="certified"] {
+  --background-soft: rgba(12, 4, 6, 0.9);
+  --surface: rgba(18, 4, 8, 0.82);
+  --surface-strong: rgba(24, 6, 10, 0.96);
+  --muted: #c197a0;
+  --line: rgba(255, 84, 116, 0.18);
+  --line-strong: rgba(255, 84, 116, 0.44);
+  --accent: #ff5474;
+  --accent-dark: #ff7d8c;
+  --accent-soft: rgba(255, 84, 116, 0.12);
+  --accent-secondary: #50111d;
+  --accent-hot: #ffc0ca;
+  --danger: #ff8aa0;
+  background:
+    radial-gradient(circle at top, rgba(255, 84, 116, 0.08), transparent 42%),
+    linear-gradient(180deg, rgba(11, 0, 2, 0.96), rgba(18, 2, 6, 0.99)),
+    linear-gradient(90deg, rgba(255, 84, 116, 0.05) 1px, transparent 1px),
+    linear-gradient(rgba(255, 84, 116, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, #040102 0%, #120206 100%);
+}
+
 .forum-main-shell {
   position: relative;
   z-index: 1;
@@ -81,6 +102,21 @@ body {
     radial-gradient(circle at 80% 10%, rgba(0, 255, 156, 0.06), transparent 16%),
     linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.22));
   pointer-events: none;
+}
+
+body[data-forum-realm="certified"] .forum-main-shell::before {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.68), rgba(16, 0, 4, 0.88)),
+    url("/chaine.png") center top / cover no-repeat;
+  opacity: 0.28;
+  filter: saturate(0.86) hue-rotate(-34deg);
+}
+
+body[data-forum-realm="certified"] .forum-main-shell::after {
+  background:
+    radial-gradient(circle at 20% 18%, rgba(255, 84, 116, 0.09), transparent 18%),
+    radial-gradient(circle at 80% 10%, rgba(255, 84, 116, 0.06), transparent 16%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(14, 0, 4, 0.36));
 }
 
 .forum-background {
@@ -118,6 +154,20 @@ body {
   mix-blend-mode: screen;
   opacity: 0.05;
   transform: rotate(-14deg);
+}
+
+body[data-forum-realm="certified"] .forum-background::before {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 84, 116, 0.16), transparent 28%),
+    url("/image.png") center 22% / min(52vw, 44rem) auto no-repeat;
+  filter: blur(1.5px) saturate(0.92) hue-rotate(-34deg);
+}
+
+body[data-forum-realm="certified"] .forum-background::after {
+  background:
+    radial-gradient(circle, rgba(255, 84, 116, 0.16), transparent 64%),
+    url("/image.png") center / contain no-repeat;
+  filter: blur(2px) saturate(0.88) hue-rotate(-34deg);
 }
 
 body::before {
@@ -218,6 +268,128 @@ input:-webkit-autofill:focus {
   border-radius: 2px;
 }
 
+body[data-forum-realm="certified"] .forum-card {
+  background:
+    linear-gradient(180deg, rgba(20, 5, 8, 0.96), rgba(10, 2, 5, 0.94)),
+    linear-gradient(135deg, rgba(255, 84, 116, 0.08), transparent 40%);
+  border-color: rgba(255, 84, 116, 0.18);
+}
+
+body[data-forum-realm="certified"] .forum-card::before {
+  border-color: rgba(255, 84, 116, 0.08);
+}
+
+body[data-forum-realm="certified"] .forum-card::after {
+  background: radial-gradient(circle at top right, rgba(255, 84, 116, 0.16), transparent 68%);
+}
+
+body[data-forum-realm="certified"] .forum-card-quiet {
+  background:
+    linear-gradient(180deg, rgba(18, 4, 8, 0.94), rgba(8, 1, 4, 0.84)),
+    linear-gradient(135deg, rgba(255, 84, 116, 0.06), transparent 44%);
+  border-color: rgba(255, 84, 116, 0.14);
+}
+
+body[data-forum-realm="certified"] .forum-inline-note {
+  color: rgba(255, 184, 194, 0.74);
+}
+
+body[data-forum-realm="certified"] .forum-meta-dot {
+  background: rgba(255, 84, 116, 0.56);
+}
+
+body[data-forum-realm="certified"] .forum-header {
+  border-bottom-color: rgba(255, 84, 116, 0.16);
+}
+
+body[data-forum-realm="certified"] .forum-header-banner {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.34), rgba(12, 1, 4, 0.84)),
+    radial-gradient(circle at 14% 54%, rgba(255, 84, 116, 0.18), transparent 23%),
+    linear-gradient(115deg, rgba(255, 84, 116, 0.12) 0%, transparent 26%, rgba(0, 0, 0, 0.18) 62%, rgba(255, 84, 116, 0.06) 100%);
+}
+
+body[data-forum-realm="certified"] .forum-header-banner::before {
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.48) 0%, transparent 34%, rgba(0, 0, 0, 0.72) 100%),
+    linear-gradient(rgba(255, 84, 116, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 84, 116, 0.04) 1px, transparent 1px),
+    linear-gradient(125deg, transparent 0%, rgba(255, 255, 255, 0.045) 48%, transparent 64%);
+}
+
+body[data-forum-realm="certified"] .forum-header-banner::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 84, 116, 0.42) 14%, rgba(255, 84, 116, 0.14) 82%, transparent 100%);
+}
+
+body[data-forum-realm="certified"] .forum-profile-trigger {
+  border-color: rgba(255, 84, 116, 0.16);
+  background:
+    linear-gradient(180deg, rgba(16, 3, 7, 0.96), rgba(8, 1, 4, 0.84)),
+    linear-gradient(135deg, rgba(255, 84, 116, 0.08), transparent 42%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 24px rgba(255, 84, 116, 0.08);
+}
+
+body[data-forum-realm="certified"] .forum-profile-trigger:hover {
+  border-color: rgba(255, 84, 116, 0.34);
+  box-shadow: 0 0 24px rgba(255, 84, 116, 0.12);
+}
+
+body[data-forum-realm="certified"] .forum-profile-trigger-fallback {
+  border-color: rgba(255, 84, 116, 0.16);
+  background: rgba(255, 84, 116, 0.08);
+}
+
+body[data-forum-realm="certified"] .forum-profile-dropdown {
+  border-color: rgba(255, 84, 116, 0.16);
+  background:
+    linear-gradient(180deg, rgba(16, 3, 7, 0.98), rgba(8, 1, 4, 0.94)),
+    linear-gradient(135deg, rgba(255, 84, 116, 0.05), transparent 36%);
+}
+
+body[data-forum-realm="certified"] .forum-profile-dropdown::before {
+  background: linear-gradient(90deg, rgba(255, 84, 116, 0.34), transparent 100%);
+}
+
+body[data-forum-realm="certified"] .forum-profile-dropdown-item {
+  border-color: rgba(255, 84, 116, 0.08);
+  background: rgba(255, 84, 116, 0.02);
+}
+
+body[data-forum-realm="certified"] .forum-profile-dropdown-item:hover {
+  border-color: rgba(255, 84, 116, 0.22);
+  background: rgba(255, 84, 116, 0.08);
+}
+
+body[data-forum-realm="certified"] .forum-command-panel {
+  background:
+    radial-gradient(circle at 84% 10%, rgba(255, 84, 116, 0.16), transparent 18%),
+    radial-gradient(circle at 16% 0%, rgba(255, 84, 116, 0.1), transparent 26%),
+    linear-gradient(180deg, rgba(20, 5, 8, 0.97), rgba(10, 2, 5, 0.95)),
+    linear-gradient(135deg, rgba(255, 84, 116, 0.08), transparent 40%);
+}
+
+body[data-forum-realm="certified"] .forum-command-panel::before {
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.04) 0%, transparent 22%, rgba(255, 84, 116, 0.04) 54%, transparent 72%),
+    linear-gradient(90deg, rgba(255, 84, 116, 0.04) 1px, transparent 1px);
+  background-size: auto, 34px 34px;
+}
+
+body[data-forum-realm="certified"] .forum-mobile-dock-inner {
+  background:
+    linear-gradient(180deg, rgba(16, 3, 7, 0.96), rgba(8, 1, 4, 0.92)),
+    linear-gradient(135deg, rgba(255, 84, 116, 0.08), transparent 44%);
+  border-color: rgba(255, 84, 116, 0.18);
+}
+
+body[data-forum-realm="certified"] .forum-mobile-dock-post {
+  box-shadow:
+    0 14px 36px rgba(255, 84, 116, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+}
+
 .forum-input {
   @apply w-full border py-3 text-sm text-[color:var(--foreground)] outline-none transition;
   background: linear-gradient(180deg, rgba(1, 8, 6, 0.98), rgba(1, 5, 4, 0.96));
@@ -275,6 +447,30 @@ input:-webkit-autofill:focus {
 
 .forum-input-shell-control::placeholder {
   color: rgba(141, 176, 162, 0.72);
+}
+
+body[data-forum-realm="certified"] .forum-input {
+  background: linear-gradient(180deg, rgba(16, 3, 7, 0.98), rgba(8, 1, 4, 0.96));
+  border-color: rgba(255, 84, 116, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 84, 116, 0.03);
+}
+
+body[data-forum-realm="certified"] .forum-input:focus {
+  box-shadow:
+    0 0 0 1px rgba(255, 84, 116, 0.24),
+    0 0 28px rgba(255, 84, 116, 0.12);
+}
+
+body[data-forum-realm="certified"] .forum-input-shell {
+  background: linear-gradient(180deg, rgba(16, 3, 7, 0.98), rgba(8, 1, 4, 0.96));
+  border-color: rgba(255, 84, 116, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 84, 116, 0.03);
+}
+
+body[data-forum-realm="certified"] .forum-input-shell:focus-within {
+  box-shadow:
+    0 0 0 1px rgba(255, 84, 116, 0.24),
+    0 0 28px rgba(255, 84, 116, 0.12);
 }
 
 .forum-textarea {
@@ -1046,7 +1242,7 @@ input:-webkit-autofill:focus {
 }
 
 .forum-mobile-dock-inner {
-  @apply mx-auto flex max-w-sm items-end justify-between gap-2 border px-3 pb-2 pt-3 backdrop-blur-2xl;
+  @apply mx-auto flex max-w-md items-end justify-between gap-2 border px-3 pb-2 pt-3 backdrop-blur-2xl;
   background:
     linear-gradient(180deg, rgba(2, 12, 9, 0.96), rgba(1, 6, 5, 0.92)),
     linear-gradient(135deg, rgba(0, 255, 156, 0.08), transparent 44%);
