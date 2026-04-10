@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AccessGatewayPanel } from "@/components/access-gateway-panel";
@@ -15,6 +16,7 @@ const introLines = [
   "Relais sécurisé en ligne",
   "Ouverture du sas NEST",
 ] as const;
+const logoSlices = Array.from({ length: 6 }, (_, index) => index);
 
 const storageKey = "nest.signal-gate.seen";
 
@@ -107,6 +109,13 @@ export function SignalGate({ children }: SignalGateProps) {
 
       {ready && phase === "intro" ? (
         <div className="forum-gate-overlay" aria-hidden="true">
+          <div className="forum-gate-noise" />
+          <div className="forum-gate-scanline" />
+          <div className="forum-gate-flash" />
+          <span className="forum-gate-hud forum-gate-hud-top-left" />
+          <span className="forum-gate-hud forum-gate-hud-top-right" />
+          <span className="forum-gate-hud forum-gate-hud-bottom-left" />
+          <span className="forum-gate-hud forum-gate-hud-bottom-right" />
           <div className="forum-gate-aura forum-gate-aura-left" />
           <div className="forum-gate-aura forum-gate-aura-right" />
           <div className="forum-gate-curtain forum-gate-curtain-top" />
@@ -120,53 +129,70 @@ export function SignalGate({ children }: SignalGateProps) {
                 <span />
               </div>
               <div className="forum-gate-brandmark">
-                <Image
-                  src="/image.png"
-                  alt=""
-                  width={585}
-                  height={427}
-                  priority
-                  className="forum-gate-brand-image"
-                />
-              </div>
-            </div>
-
-            <div className="forum-gate-lines">
-              {introLines.slice(0, lineIndex).map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-
-              {introLines[lineIndex] ? (
-                <p>
-                  {introLines[lineIndex].slice(0, charIndex)}
-                  <span className="forum-caret" />
-                </p>
-              ) : null}
-            </div>
-
-            <div className="forum-gate-progress-shell">
-              <div className="forum-gate-progress">
-                <span style={{ width: `${progress}%` }} />
-              </div>
-
-              <div className="forum-gate-meter">
-                {introLines.map((line, index) => {
-                  const active =
-                    index < lineIndex ||
-                    (index === lineIndex && charIndex > 0) ||
-                    (!introLines[lineIndex] && index === introLines.length - 1);
-
-                  return (
+                <div className="forum-gate-brandmark-frame" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div className="forum-gate-logo-core" />
+                <div className="forum-gate-logo-slices" aria-hidden="true">
+                  {logoSlices.map((slice) => (
                     <span
-                      key={line}
-                      className={
-                        active
-                          ? "forum-gate-meter-segment forum-gate-meter-segment-active"
-                          : "forum-gate-meter-segment"
+                      key={slice}
+                      className="forum-gate-logo-slice"
+                      style={
+                        {
+                          "--slice-delay": `${slice * 0.11}s`,
+                          "--slice-end": `${((slice + 1) / logoSlices.length) * 100}%`,
+                          "--slice-shift": slice % 2 === 0 ? "-1" : "1",
+                          "--slice-start": `${(slice / logoSlices.length) * 100}%`,
+                        } as CSSProperties
                       }
                     />
-                  );
-                })}
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="forum-gate-console">
+              <div className="forum-gate-lines">
+                {introLines.slice(0, lineIndex).map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+
+                {introLines[lineIndex] ? (
+                  <p>
+                    {introLines[lineIndex].slice(0, charIndex)}
+                    <span className="forum-caret" />
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="forum-gate-progress-shell">
+                <div className="forum-gate-progress">
+                  <span style={{ width: `${progress}%` }} />
+                </div>
+
+                <div className="forum-gate-meter">
+                  {introLines.map((line, index) => {
+                    const active =
+                      index < lineIndex ||
+                      (index === lineIndex && charIndex > 0) ||
+                      (!introLines[lineIndex] && index === introLines.length - 1);
+
+                    return (
+                      <span
+                        key={line}
+                        className={
+                          active
+                            ? "forum-gate-meter-segment forum-gate-meter-segment-active"
+                            : "forum-gate-meter-segment"
+                        }
+                      />
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -175,6 +201,12 @@ export function SignalGate({ children }: SignalGateProps) {
 
       {ready && phase === "access" ? (
         <div className="forum-gate-overlay forum-gate-overlay-access">
+          <div className="forum-gate-noise" />
+          <div className="forum-gate-scanline" />
+          <span className="forum-gate-hud forum-gate-hud-top-left" />
+          <span className="forum-gate-hud forum-gate-hud-top-right" />
+          <span className="forum-gate-hud forum-gate-hud-bottom-left" />
+          <span className="forum-gate-hud forum-gate-hud-bottom-right" />
           <div className="forum-gate-aura forum-gate-aura-left" />
           <div className="forum-gate-aura forum-gate-aura-right" />
           <div className="forum-gate-curtain forum-gate-curtain-top" />
@@ -184,6 +216,8 @@ export function SignalGate({ children }: SignalGateProps) {
             <div className="forum-gate-access-brand">
               <div className="forum-gate-access-pulse" aria-hidden="true" />
               <div className="forum-gate-access-mark">
+                <div className="forum-gate-access-mark-grid" aria-hidden="true" />
+                <div className="forum-gate-access-mark-scan" aria-hidden="true" />
                 <Image
                   src="/image.png"
                   alt=""
