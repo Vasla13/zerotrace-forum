@@ -25,7 +25,9 @@ export function SignalGate({ children }: SignalGateProps) {
   const [phase, setPhase] = useState<"hidden" | "intro" | "access">("hidden");
   const [lineIndex, setLineIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
-  const gateActive = ready && pathname === "/" && phase !== "hidden";
+  const isHomePath = pathname === "/";
+  const gatePending = isHomePath && !ready;
+  const gateActive = isHomePath && (gatePending || phase !== "hidden");
   const totalCharacters = introLines.reduce((sum, line) => sum + line.length, 0);
   const completedCharacters =
     introLines
@@ -104,6 +106,28 @@ export function SignalGate({ children }: SignalGateProps) {
   return (
     <>
       {children}
+
+      {gatePending ? (
+        <div className="forum-gate-overlay forum-gate-overlay-pending" aria-hidden="true">
+          <div className="forum-gate-aura forum-gate-aura-left" />
+          <div className="forum-gate-aura forum-gate-aura-right" />
+          <div className="forum-gate-curtain forum-gate-curtain-top" />
+          <div className="forum-gate-curtain forum-gate-curtain-bottom" />
+
+          <div className="forum-gate-standby">
+            <div className="forum-gate-brandmark forum-gate-standby-mark">
+              <Image
+                src="/image.png"
+                alt=""
+                width={585}
+                height={427}
+                priority
+                className="forum-gate-brand-image"
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {ready && phase === "intro" ? (
         <div className="forum-gate-overlay" aria-hidden="true">
