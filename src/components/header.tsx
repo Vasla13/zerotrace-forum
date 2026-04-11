@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { startTransition, useEffect, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { ChevronDown, EyeOff, LogOut, Plus, Shield, UserRound } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { signOutForumUser } from "@/lib/data/users";
@@ -13,7 +13,6 @@ import { toast } from "sonner";
 
 export function Header() {
   const pathname = usePathname();
-  const router = useRouter();
   const { canAccessShadow, isAdmin, profile, user } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isHiddenOnScroll, setIsHiddenOnScroll] = useState(false);
@@ -98,10 +97,7 @@ export function Header() {
     try {
       await signOutForumUser();
       window.sessionStorage.removeItem(signalGateStorageKey);
-      toast.success("Déconnexion effectuée.");
-      startTransition(() => {
-        router.replace("/login");
-      });
+      window.location.assign("/");
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { KeyRound, RefreshCw, UserRound } from "lucide-react";
 import { authenticateIdentity } from "@/lib/data/identity";
-import { generateAliasBundle, generateNodeAlias } from "@/lib/utils/alias";
+import { generateNodeAlias } from "@/lib/utils/alias";
 import { getErrorMessage } from "@/lib/utils/errors";
 import {
   identityCreateSchema,
@@ -30,10 +30,6 @@ export function IdentityGatewayPanel({
   const router = useRouter();
   const { configured, loading, user } = useAuth();
   const [mode, setMode] = useState<IdentityMode>("create");
-  const [suggestionSeed, setSuggestionSeed] = useState(() => `${Date.now()}`);
-  const [suggestions, setSuggestions] = useState<string[]>(() =>
-    generateAliasBundle(`${Date.now()}`, 6),
-  );
   const [createUsername, setCreateUsername] = useState(() =>
     generateNodeAlias(`${Date.now()}`),
   );
@@ -55,17 +51,12 @@ export function IdentityGatewayPanel({
     }
 
     if (!createUsername.trim()) {
-      setCreateUsername(suggestions[0] ?? generateNodeAlias(suggestionSeed));
+      setCreateUsername(generateNodeAlias(`${Date.now()}`));
     }
-  }, [createUsername, mode, suggestionSeed, suggestions]);
+  }, [createUsername, mode]);
 
   function rotateIdentity() {
-    const nextSeed = `${Date.now()}`;
-    const nextSuggestions = generateAliasBundle(nextSeed, 6);
-
-    setSuggestionSeed(nextSeed);
-    setSuggestions(nextSuggestions);
-    setCreateUsername(nextSuggestions[0] ?? generateNodeAlias(nextSeed));
+    setCreateUsername(generateNodeAlias(`${Date.now()}`));
   }
 
   function handleAuthenticated(result: {
@@ -126,7 +117,7 @@ export function IdentityGatewayPanel({
   return (
     <div className={["forum-access-panel", className].filter(Boolean).join(" ")}>
       <div className="forum-access-main">
-        <div className="forum-section-head items-start">
+        <div className="forum-section-head items-start gap-3">
           <div>
             <div className="forum-access-head-rails" aria-hidden="true">
               <span />
@@ -137,12 +128,6 @@ export function IdentityGatewayPanel({
               {mode === "create" ? "Forge ton identité" : "Reprendre une identité"}
             </h2>
           </div>
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          <span className="forum-inline-note">
-            {mode === "create" ? "premier passage" : "retour"}
-          </span>
           <button
             type="button"
             onClick={() => {
@@ -151,7 +136,7 @@ export function IdentityGatewayPanel({
             }}
             className={clsx("forum-button-ghost")}
           >
-            {mode === "create" ? "J’ai déjà une identité" : "Forger une nouvelle identité"}
+            {mode === "create" ? "Reprendre" : "Nouvelle identité"}
           </button>
         </div>
 
@@ -197,23 +182,6 @@ export function IdentityGatewayPanel({
               />
             </div>
           </label>
-
-          {mode === "create" ? (
-            <div className="forum-access-suggestions-grid">
-              {suggestions.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  onClick={() => {
-                    setCreateUsername(suggestion);
-                  }}
-                  className="forum-suggestion-chip"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          ) : null}
 
           <label className="grid gap-2">
             <span className="forum-inline-note">mot de passe</span>

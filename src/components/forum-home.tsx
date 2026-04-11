@@ -214,28 +214,62 @@ export function ForumHome({ realm = "public" }: ForumHomeProps) {
   }
 
   return (
-    <div className="forum-grid w-full">
+    <div className={isShadowRealm ? "forum-grid forum-grid-certified w-full" : "forum-grid w-full"}>
       <RealmTheme realm={realm} />
 
-      <section className="forum-card forum-command-panel p-6 sm:p-7">
+      <section
+        className={
+          isShadowRealm
+            ? "forum-card forum-command-panel forum-command-panel-certified p-6 sm:p-7"
+            : "forum-card forum-command-panel p-6 sm:p-7"
+        }
+      >
+        {isShadowRealm ? (
+          <div className="forum-shadow-band">
+            <span>couche rouge</span>
+            <span>diffusion restreinte</span>
+            <span>archives brutes</span>
+          </div>
+        ) : null}
+
         <div className="forum-command-head">
           <div className="forum-command-copy">
             <span className="forum-pill">{forumRealmLabels[realm]}</span>
+            {isShadowRealm ? (
+              <div className="forum-shadow-kicker">NEST // REDLINE</div>
+            ) : null}
             <h1 className="forum-title mt-4 text-4xl sm:text-5xl">
               {isShadowRealm ? "Face cachée" : "NEST"}
             </h1>
             <p className="forum-muted mt-3 max-w-2xl text-sm leading-7">
               {isShadowRealm
-                ? "Canal rouge. Fuites internes, traces anti-corpo et matière sensible."
+                ? "Canal brut. Dossiers anti-corpo, fuites internes, traces non nettoyées."
                 : user
                   ? "Forum ouvert. Trie, scanne, publie."
                   : "Forum ouvert. Forge une identité pour publier et répondre."}
             </p>
           </div>
 
-          <div className="forum-toolbar">
+          <div className={isShadowRealm ? "forum-shadow-side" : "forum-toolbar"}>
+            {isShadowRealm ? (
+              <div className="forum-shadow-readout">
+                <div className="forum-shadow-readout-card">
+                  <span className="forum-inline-note">niveau</span>
+                  <strong>certifié</strong>
+                </div>
+                <div className="forum-shadow-readout-card">
+                  <span className="forum-inline-note">signal</span>
+                  <strong>brut</strong>
+                </div>
+                <div className="forum-shadow-readout-card">
+                  <span className="forum-inline-note">accès</span>
+                  <strong>redline</strong>
+                </div>
+              </div>
+            ) : null}
+
             {canAccessShadow ? (
-              <div className="flex flex-wrap gap-2">
+              <div className={isShadowRealm ? "forum-shadow-switcher" : "flex flex-wrap gap-2"}>
                 <Link
                   href="/"
                   className={
@@ -363,10 +397,10 @@ export function ForumHome({ realm = "public" }: ForumHomeProps) {
             <div>
               <span className="forum-pill">
                 <Pin className="h-3.5 w-3.5" />
-                {isShadowRealm ? "Signal rouge" : "Épinglé"}
+                {isShadowRealm ? "Signal prioritaire" : "Épinglé"}
               </span>
               <h2 className="forum-title mt-4 text-3xl sm:text-4xl">
-                {isShadowRealm ? "Dossier chaud" : "Annonce active"}
+                {isShadowRealm ? "Dossier prioritaire" : "Annonce active"}
               </h2>
             </div>
           </div>
@@ -376,7 +410,13 @@ export function ForumHome({ realm = "public" }: ForumHomeProps) {
         </section>
       ) : null}
 
-      <section className="forum-card forum-feed-section p-6 sm:p-7">
+      <section
+        className={
+          isShadowRealm
+            ? "forum-card forum-feed-section forum-feed-section-certified p-6 sm:p-7"
+            : "forum-card forum-feed-section p-6 sm:p-7"
+        }
+      >
         <div className="forum-section-head">
           <div>
             <span className="forum-pill">
@@ -384,17 +424,23 @@ export function ForumHome({ realm = "public" }: ForumHomeProps) {
               {isSearching ? "Recherche" : forumFeedFilterLabels[activeFilter]}
             </span>
             <h2 className="forum-title mt-4 text-3xl sm:text-4xl">
-              {isSearching ? "Résultats" : isShadowRealm ? "Flux rouge" : "Flux"}
+              {isSearching ? "Résultats" : isShadowRealm ? "Dossiers rouges" : "Flux"}
             </h2>
             <div className="forum-meta-line mt-3">
               <span>
                 {isSearching
                   ? resultLabel
                   : activeFilter === "popular"
-                    ? "classé par impact"
+                    ? isShadowRealm
+                      ? "classé par impact interne"
+                      : "classé par impact"
                     : activeFilter === "media"
-                      ? "posts avec image ou vidéo"
-                      : "du plus récent au plus ancien"}
+                      ? isShadowRealm
+                        ? "preuves visuelles et captures"
+                        : "posts avec image ou vidéo"
+                      : isShadowRealm
+                        ? "du plus récent au plus sensible"
+                        : "du plus récent au plus ancien"}
               </span>
               {activeChannel !== "all" ? (
                 <>
