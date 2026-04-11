@@ -28,6 +28,7 @@ export function SignalGate({ children }: SignalGateProps) {
   const isHomePath = pathname === "/";
   const gatePending = isHomePath && !ready;
   const gateActive = isHomePath && (gatePending || phase !== "hidden");
+  const showChildren = !isHomePath || (ready && phase === "hidden");
   const totalCharacters = introLines.reduce((sum, line) => sum + line.length, 0);
   const completedCharacters =
     introLines
@@ -92,9 +93,11 @@ export function SignalGate({ children }: SignalGateProps) {
 
   useEffect(() => {
     document.body.dataset.gateActive = gateActive ? "true" : "false";
+    document.documentElement.dataset.preboot = gateActive ? "gate" : "ready";
 
     return () => {
       delete document.body.dataset.gateActive;
+      delete document.documentElement.dataset.preboot;
     };
   }, [gateActive]);
 
@@ -105,10 +108,24 @@ export function SignalGate({ children }: SignalGateProps) {
 
   return (
     <>
-      {children}
+      {showChildren ? children : null}
 
       {gatePending ? (
-        <div className="forum-gate-overlay forum-gate-overlay-pending" aria-hidden="true">
+        <div
+          className="forum-gate-overlay forum-gate-overlay-pending"
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 120,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1.25rem",
+            overflow: "hidden",
+            backgroundColor: "#000",
+          }}
+        >
           <div className="forum-gate-aura forum-gate-aura-left" />
           <div className="forum-gate-aura forum-gate-aura-right" />
           <div className="forum-gate-curtain forum-gate-curtain-top" />

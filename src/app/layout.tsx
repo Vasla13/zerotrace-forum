@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Space_Grotesk } from "next/font/google";
+import Script from "next/script";
 import { Header } from "@/components/header";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { AppProviders } from "@/providers/app-providers";
@@ -61,6 +62,27 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${cyberBrush.variable}`}
     >
       <body className="min-h-screen antialiased">
+        <style>{`
+          html[data-preboot="gate"],
+          html[data-preboot="gate"] body {
+            background: #000;
+            overflow: hidden;
+          }
+
+          html[data-preboot="gate"] .forum-header,
+          html[data-preboot="gate"] .forum-background,
+          html[data-preboot="gate"] .forum-mobile-dock {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+          }
+        `}</style>
+        <Script id="nest-preboot" strategy="beforeInteractive">{`
+          (function () {
+            document.documentElement.dataset.preboot =
+              window.location.pathname === "/" ? "gate" : "ready";
+          })();
+        `}</Script>
         <AppProviders>
           <div className="relative flex min-h-screen flex-col">
             <div aria-hidden="true" className="forum-background" />
